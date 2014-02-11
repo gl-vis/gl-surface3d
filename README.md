@@ -46,6 +46,8 @@ Here is what this should look like:
 
 <img src="plot.png">
 
+[Test it in your browser (requires WebGL)](http://mikolalysenko.github.io/gl-surface-plot/)
+
 ## Install
 
 ```
