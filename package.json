@@ -10,7 +10,7 @@
     "glslify": "~1.0.0",
     "gl-buffer": "~2.0.3",
     "gl-vao": "~1.1.1",
-    "gl-texture2d": "~0.1.7",
+    "gl-texture2d": "~0.1.11",
     "typedarray-pool": "~0.1.2",
     "ndarray-pack": "~1.0.1",
     "ndarray-ops": "~1.2.1",
