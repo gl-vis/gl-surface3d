@@ -32,6 +32,6 @@ shell.on("gl-init", function() {
 shell.on("gl-render", function() {
   surface.draw({
     view: camera.view(),
-    projection:  mat4.perspective(new Array(16), Math.PI/4.0, shell.width/shell.height, 0.1, 10000.0)
+    projection:  mat4.perspective(new Array(16), Math.PI/4.0, shell.width/shell.height, 0.1, 1000.0)
   })
 })
