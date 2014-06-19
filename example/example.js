@@ -30,6 +30,7 @@ shell.on("gl-init", function() {
 })
 
 shell.on("gl-render", function() {
+  surface.clipBounds = [[128,128,0], [256,512,128]]
   surface.draw({
     view: camera.view(),
     projection:  mat4.perspective(new Array(16), Math.PI/4.0, shell.width/shell.height, 0.1, 1000.0)

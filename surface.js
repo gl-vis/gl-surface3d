@@ -43,6 +43,14 @@ function genColormap(name) {
   return x
 }
 
+function clampVec(v) {
+  var result = new Array(3)
+  for(var i=0; i<3; ++i) {
+    result[i] = Math.min(Math.max(v[i], -1e8), 1e8)
+  }
+  return result
+}
+
 function SurfacePlot(gl, shape, bounds, shader, coordinates, values, vao, colorMap) {
   this.gl = gl
   this.shape = shape
@@ -52,6 +60,7 @@ function SurfacePlot(gl, shape, bounds, shader, coordinates, values, vao, colorM
   this._valueBuffer = values
   this._vao = vao
   this._colorMap = colorMap
+  this.clipBounds = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
 }
 
 var proto = SurfacePlot.prototype
@@ -68,6 +77,7 @@ proto.draw = function(params) {
   this._shader.uniforms.lowerBound = this.bounds[0]
   this._shader.uniforms.upperBound = this.bounds[1]
   this._shader.uniforms.colormap = this._colorMap.bind(0)
+  this._shader.uniforms.clipBounds = this.clipBounds.map(clampVec)
 
   //Draw it
   this._vao.bind()

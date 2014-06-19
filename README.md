@@ -90,5 +90,9 @@ Destroys the surface, releases all associated WebGL resources
 ### `surface.bounds`
 A pair of 3D arrays representing the lower/upper bounding box for the surface plot.
 
+### `surface.clipBounds`
+
+A pair of arrays which bound the coordinates of the surface plot in 3D.
+
 ## License
 MIT License.
