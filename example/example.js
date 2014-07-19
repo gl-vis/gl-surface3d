@@ -3,13 +3,18 @@
 var shell = require("gl-now")({ clearColor: [0,0,0,0] })
 var camera = require("game-shell-orbit-camera")(shell)
 var createSurface = require("../surface.js")
+var createAxes = require("gl-axes")
+var createSpikes = require("gl-spikes")
 var ndarray = require("ndarray")
 var fill = require("ndarray-fill")
 var diric = require("dirichlet")
 var glm = require("gl-matrix")
+var createSelect = require("gl-select")
 var mat4 = glm.mat4
 
-var surface
+var surface, spikes, axes, select, target = null
+
+var size = 256
 
 shell.on("gl-init", function() {
   var gl = shell.gl
@@ -17,22 +22,51 @@ shell.on("gl-init", function() {
 
   //Set up camera
   camera.lookAt(
-    [0, 0, 2],      //Eye position
-    [256, 256, 64], //Eye target
+    [-size, -size, 1.5*size],      //Eye position
+    [size, size, 0.5 * size], //Eye target
     [0, 0, 1])      //Up direction
 
   //Create field
-  var field = ndarray(new Float32Array(512*512), [512,512])
+  var field = ndarray(new Float32Array(4*size*size), [2*size,2*size])
   fill(field, function(x,y) {
-    return 128 * diric(10, 10.0*(x-256)/512) * diric(10, 10.0*(y-256)/512)
+    return 0.5 * size * diric(10, 5.0*(x-size)/size) * diric(10, 5.0*(y-size)/size)
   })
   surface = createSurface(gl, field)
+
+  spikes = createSpikes(gl, {
+    bounds: surface.bounds
+  })
+
+  axes = createAxes(gl, {
+    bounds: surface.bounds,
+    tickSpacing: [0.125*size, 0.125*size, 0.125*size],
+    textSize: size / 32.0
+  })
+
+  select = createSelect(gl, [shell.height, shell.width])
 })
 
+function drawPick(cameraParams) {
+  select.shape = [shell.height, shell.width]
+  select.begin(shell.mouse[0], shell.mouse[1], 30)
+  surface.drawPick(cameraParams)
+  target = surface.pick(select.end())
+}
+
 shell.on("gl-render", function() {
-  surface.clipBounds = [[128,128,0], [256,512,128]]
-  surface.draw({
+  var cameraParams = {
     view: camera.view(),
-    projection:  mat4.perspective(new Array(16), Math.PI/4.0, shell.width/shell.height, 0.1, 1000.0)
-  })
+    projection:  mat4.perspective(
+      new Array(16), Math.PI/4.0, shell.width/shell.height, 0.1, 10000.0)
+  }
+
+  drawPick(cameraParams)
+
+  surface.draw(cameraParams)
+  axes.draw(cameraParams)
+
+  if(target) {
+    spikes.position = target.position
+    spikes.draw(cameraParams)
+  }
 })

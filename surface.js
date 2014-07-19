@@ -10,10 +10,16 @@ var pool = require("typedarray-pool")
 var colormap = require("colormap")
 var ops = require("ndarray-ops")
 var pack = require("ndarray-pack")
+var ndarray = require("ndarray")
 
 var createShader = glslify({
-  vertex: "./vertex.glsl",
-  fragment: "./fragment.glsl"
+  vertex: "./shaders/vertex.glsl",
+  fragment: "./shaders/fragment.glsl"
+})
+
+var createPickShader = glslify({
+  vertex: "./shaders/vertex.glsl",
+  fragment: "./shaders/pick.glsl"
 })
 
 var IDENTITY = [
@@ -30,6 +36,10 @@ var QUAD = [
   [1, 0],
   [0, 1]
 ]
+
+function SurfacePickResult(position) {
+  this.position = position
+}
 
 function genColormap(name) {
   var x = pack([colormap({
@@ -51,15 +61,18 @@ function clampVec(v) {
   return result
 }
 
-function SurfacePlot(gl, shape, bounds, shader, coordinates, values, vao, colorMap) {
+function SurfacePlot(gl, shape, bounds, shader, pickShader, coordinates, values, vao, colorMap) {
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
   this._shader = shader
+  this._pickShader = pickShader
   this._coordinateBuffer = coordinates
   this._valueBuffer = values
   this._vao = vao
   this._colorMap = colorMap
+  this._field = ndarray(pool.mallocFloat(1024), [0,0])
+  this.pickId = 1
   this.clipBounds = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
 }
 
@@ -85,8 +98,64 @@ proto.draw = function(params) {
   this._vao.unbind()
 }
 
+proto.drawPick = function(params) {
+  params = params || {}
+  var gl = this.gl
+  
+  //Set up uniforms
+  var shader = this._pickShader
+  shader.bind()
+  shader.uniforms.model = params.model || IDENTITY
+  shader.uniforms.view = params.view || IDENTITY
+  shader.uniforms.projection = params.projection || IDENTITY
+  shader.uniforms.clipBounds = this.clipBounds.map(clampVec)
+  shader.uniforms.shape = this._field.shape.slice()
+  shader.uniforms.pickId = this.pickId / 255.0
+
+  //Draw it
+  this._vao.bind()
+  this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
+  this._vao.unbind()
+}
+
+proto.pick = function(selection) {
+  if(!selection) {
+    return null
+  }
+
+  if(selection.id !== this.pickId) {
+    return null
+  }
+
+  var x = this._field.shape[0] * (selection.value[0] + (selection.value[2]>>4)/16.0)/255.0
+  var ix = Math.floor(x)
+  var fx = x - ix
+
+  var y = this._field.shape[1] * (selection.value[1] + (selection.value[2]&15)/16.0)/255.0
+  var iy = Math.floor(y)
+  var fy = y - iy
+
+  var z = 0.0
+  for(var dx=0; dx<2; ++dx) {
+    var s = dx ? fx : 1.0 - fx
+    for(var dy=0; dy<2; ++dy) {
+      var t = dy ? fy : 1.0 - fy
+      var f = this._field.get(
+        Math.min(ix + dx, this._field.shape[0]-1),
+        Math.min(iy + dy, this._field.shape[1]-1))
+      z += f * s * t
+    }
+  }
+
+  return new SurfacePickResult([x, y, z])
+}
+
 proto.update = function(params) {
   params = params || {}
+
+  if("pickId" in params) {
+    this.pickId = params.pickId|0
+  }
 
   if(params.field) {
     var field = params.field
@@ -109,6 +178,14 @@ proto.update = function(params) {
       this._coordinateBuffer.update(verts)
       pool.freeFloat(verts)
     }
+
+    //Copy field
+    if(field.size > this._field.data.length) {
+      pool.freeFloat(this._field.data)
+      this._field.data = pool.mallocFloat(field.size)
+    }
+    this._field = ndarray(this._field.data, field.shape)
+    ops.assign(this._field, field)
 
     //Update field values
     var minZ = Infinity
@@ -146,12 +223,16 @@ proto.dispose = function() {
   this._coordinateBuffer.dispose()
   this._valueBuffer.dispose()
   this._colorMap.dispose()
+  pool.freeFloat(this._field.data)
 }
 
 function createSurfacePlot(gl, field, params) {
   var shader = createShader(gl)
   shader.attributes.uv.location = 0
   shader.attributes.f.location = 1
+  var pickShader = createPickShader(gl)
+  pickShader.attributes.uv.location = 0
+  pickShader.attributes.f.location = 1
   var estimatedSize = (field.shape[0]-1) * (field.shape[1]-1) * 6 * 4
   var coordinateBuffer = createBuffer(gl, estimatedSize * 2)
   var valueBuffer = createBuffer(gl, estimatedSize)
@@ -170,7 +251,8 @@ function createSurfacePlot(gl, field, params) {
     gl, 
     [0,0], 
     [[0,0,0], [0,0,0]], 
-    shader, 
+    shader,
+    pickShader,
     coordinateBuffer, 
     valueBuffer,
     vao,

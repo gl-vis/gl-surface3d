@@ -65,6 +65,7 @@ Creates a surface plot object
 
 * `gl` is a WebGL context
 * `field` is a 2D ndarray
+* `pickId` is the picking id for the surface
 * `params` is an optional collection of arguments that contains any of the following:
 
     + `colormap` - the name of the color map to use for the surface (default "jet")
@@ -76,6 +77,7 @@ Updates the surface.  The parameter object may contain any of the following prop
 
 * `field` a new 2D field encoded as an ndarray
 * `colormap` the name of the new color map for the surface
+* `pickId` is the picking id for the surface
 
 ### `surface.draw([params])`
 Draws the surface.  Accepts the following parameters
@@ -86,6 +88,16 @@ Draws the surface.  Accepts the following parameters
 
 ### `surface.dispose()`
 Destroys the surface, releases all associated WebGL resources
+
+### `surface.drawPick(camera)`
+Draws the surface for point picking mode
+
+### `surface.pick(selection)`
+Test if the given selection is contained in the surface.  If true, returns an object encoding the selected point.
+
+**Returns** An object encoding the selected point on the surface with the following properties:
+
+* `position` which is the position of the selected point on the surface
 
 ### `surface.bounds`
 A pair of 3D arrays representing the lower/upper bounding box for the surface plot.
