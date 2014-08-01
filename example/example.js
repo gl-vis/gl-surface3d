@@ -31,7 +31,17 @@ shell.on("gl-init", function() {
   fill(field, function(x,y) {
     return 0.5 * size * diric(10, 5.0*(x-size)/size) * diric(10, 5.0*(y-size)/size)
   })
-  surface = createSurface(gl, field)
+
+  //Create ticks
+  var ticks = [ ndarray(new Float32Array(2*size+1)), ndarray(new Float32Array(2*size+1)) ]
+  for(var i=0; i<=2*size; ++i) {
+    ticks[0].set(i, Math.sqrt(i))
+    ticks[1].set(i, i)
+  }
+
+  surface = createSurface(gl, field, {
+    ticks: ticks
+  })
 
   spikes = createSpikes(gl, {
     bounds: surface.bounds

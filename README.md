@@ -65,10 +65,10 @@ Creates a surface plot object
 
 * `gl` is a WebGL context
 * `field` is a 2D ndarray
-* `pickId` is the picking id for the surface
 * `params` is an optional collection of arguments that contains any of the following:
 
     + `colormap` - the name of the color map to use for the surface (default "jet")
+    + `pickId` is the picking id for the surface
 
 **Returns** A surface object
 
@@ -78,6 +78,7 @@ Updates the surface.  The parameter object may contain any of the following prop
 * `field` a new 2D field encoded as an ndarray
 * `colormap` the name of the new color map for the surface
 * `pickId` is the picking id for the surface
+* `ticks` is a pair of arrays of ticks representing the spacing of the points for the axes of the surface
 
 ### `surface.draw([params])`
 Draws the surface.  Accepts the following parameters

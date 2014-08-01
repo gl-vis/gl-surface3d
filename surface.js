@@ -72,6 +72,7 @@ function SurfacePlot(gl, shape, bounds, shader, pickShader, coordinates, values,
   this._vao = vao
   this._colorMap = colorMap
   this._field = ndarray(pool.mallocFloat(1024), [0,0])
+  this._ticks = [ ndarray(pool.mallocFloat(1024)), ndarray(pool.mallocFloat(1024)) ]
   this.pickId = 1
   this.clipBounds = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
 }
@@ -147,7 +148,15 @@ proto.pick = function(selection) {
     }
   }
 
-  return new SurfacePickResult([x, y, z])
+  var s0 = this._ticks[0].get(ix)
+  var s1 = this._ticks[0].get(ix+1)
+  var t0 = this._ticks[1].get(iy)
+  var t1 = this._ticks[1].get(iy+1)
+
+  return new SurfacePickResult([
+    s0*(1.0-fx) + s1*fx, 
+    t0*(1.0-fy) + t1*fy, 
+    z])
 }
 
 proto.update = function(params) {
@@ -157,27 +166,9 @@ proto.update = function(params) {
     this.pickId = params.pickId|0
   }
 
+  var geometryNeedsUpdate = false
   if(params.field) {
     var field = params.field
-
-    //Update coordinates of field
-    var nshape = field.shape.slice()
-    if(nshape[0] !== this.shape[0] || nshape[1] !== this.shape[1]) {
-      this.shape = nshape
-      var count = (nshape[0]-1) * (nshape[1]-1) * 6 * 2
-      var verts = pool.mallocFloat(count)
-      var ptr = 0
-      for(var i=0; i<nshape[0]-1; ++i) {
-        for(var j=0; j<nshape[1]-1; ++j) {
-          for(var k=0; k<6; ++k) {
-            verts[ptr++] = i + QUAD[k][0]
-            verts[ptr++] = j + QUAD[k][1]
-          }
-        }
-      }
-      this._coordinateBuffer.update(verts)
-      pool.freeFloat(verts)
-    }
 
     //Copy field
     if(field.size > this._field.data.length) {
@@ -188,6 +179,7 @@ proto.update = function(params) {
     ops.assign(this._field, field)
 
     //Update field values
+    var nshape = field.shape.slice()
     var minZ = Infinity
     var maxZ = -Infinity
     var count = (nshape[0]-1) * (nshape[1]-1) * 6
@@ -206,14 +198,93 @@ proto.update = function(params) {
     this._valueBuffer.update(verts)
 
     //Update bounding box
-    this.bounds = [
-      [0, 0, minZ],
-      [nshape[0], nshape[1], maxZ]
-    ]
+    this.bounds[0][2] = minZ
+    this.bounds[1][2] = maxZ
+  }
+
+  if(params.ticks) {
+    var curTicks = this._ticks
+    var nextTicks = params.ticks
+
+    for(var i=0; i<2; ++i) {
+      var cur = curTicks[i]
+      var next = nextTicks[i]
+      if(Array.isArray(next)) {
+        next = ndarray(next)
+      }
+      if(next.shape[0] !== this._field.shape[i]+1) {
+        throw new Error("gl-surface-plot: Incompatible shape")
+      }
+      if(cur.data.length < next.shape[0]) {
+        pool.free(cur.data)
+        cur.data = pool.mallocFloat(next.shape[0])
+      }
+      cur.shape[0] = next.shape[0]
+      ops.assign(cur, next)
+    }
+
+    geometryNeedsUpdate = true
+  } else {
+    var ticks = this._ticks
+    for(var i=0; i<2; ++i) {
+      var cur = ticks[i]
+      var nn = this._field.shape[i]+1
+      if(cur.shape[0] !== nn) {
+        geometryNeedsUpdate = true
+        if(cur.data.length < nn) {
+          pool.free(cur.data)
+          cur.data = pool.mallocFloat(nn)
+        }
+        cur.shape[0] = nn
+        for(var j=0; j<nn; ++j) {
+          cur.set(j, j)
+        }
+      }
+    }
+  }
+
+  if(geometryNeedsUpdate) {
+    var field = this._field
+    var ticks = this._ticks
+
+    //Update coordinates of field
+    var lo = [ Infinity, Infinity]
+    var hi = [-Infinity,-Infinity]
+    var nshape = field.shape.slice()
+    if(nshape[0] !== this.shape[0] || nshape[1] !== this.shape[1]) {
+      this.shape = nshape
+      var count = (nshape[0]-1) * (nshape[1]-1) * 6 * 4
+      var verts = pool.mallocFloat(count)
+      var ptr = 0
+      for(var i=0; i<nshape[0]-1; ++i) {
+        for(var j=0; j<nshape[1]-1; ++j) {
+
+          lo[0] = Math.min(lo[0], ticks[0].get(i))
+          hi[0] = Math.max(hi[0], ticks[0].get(i))
+          lo[1] = Math.min(lo[1], ticks[1].get(j))
+          hi[1] = Math.max(hi[1], ticks[1].get(j))
+
+          for(var k=0; k<6; ++k) {
+            verts[ptr++] = i + QUAD[k][0]
+            verts[ptr++] = j + QUAD[k][1]
+            verts[ptr++] = ticks[0].get(i + QUAD[k][0])
+            verts[ptr++] = ticks[1].get(j + QUAD[k][1])
+          }
+        }
+      }
+      this._coordinateBuffer.update(verts)
+      pool.freeFloat(verts)
+    }
+    for(var i=0; i<2; ++i) {
+      this.bounds[0][i] = lo[i]
+      this.bounds[1][i] = hi[i]
+    }
   }
 
   if(typeof params.colormap === "string") {
     this._colorMap.setPixels(genColormap(params.colormap))
+  } else {
+    //TODO: Support for colormap arrays
   }
 }
 
@@ -234,11 +305,11 @@ function createSurfacePlot(gl, field, params) {
   pickShader.attributes.uv.location = 0
   pickShader.attributes.f.location = 1
   var estimatedSize = (field.shape[0]-1) * (field.shape[1]-1) * 6 * 4
-  var coordinateBuffer = createBuffer(gl, estimatedSize * 2)
+  var coordinateBuffer = createBuffer(gl, estimatedSize * 4)
   var valueBuffer = createBuffer(gl, estimatedSize)
   var vao = createVAO(gl, [
       { buffer: coordinateBuffer,
-        size: 2
+        size: 4
       },
       { buffer: valueBuffer,
         size: 1

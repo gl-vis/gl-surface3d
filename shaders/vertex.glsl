@@ -1,4 +1,4 @@
-attribute vec2 uv;
+attribute vec4 uv;
 attribute float f;
 
 uniform mat4 model;
@@ -10,9 +10,9 @@ varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
 
 void main() {
-  vec4 worldPosition = model * vec4(uv, f, 1.0);
+  vec4 worldPosition = model * vec4(uv.zw, f, 1.0);
   gl_Position = projection * view * worldPosition;
   value = f;
   worldCoordinate = worldPosition.xyz / worldPosition.w;
-  planeCoordinate = uv;
+  planeCoordinate = uv.xy;
 }
