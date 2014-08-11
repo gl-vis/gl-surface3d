@@ -1,6 +1,6 @@
 {
   "name": "gl-surface-plot",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Renders 2D surfaces",
   "main": "surface.js",
   "directories": {
@@ -14,7 +14,7 @@
     "typedarray-pool": "^1.0.0",
     "ndarray-pack": "^1.0.1",
     "ndarray-ops": "^1.2.1",
-    "colormap": "^0.3.7",
+    "colormap": "^1.1.1",
     "ndarray-scratch": "^1.1.1",
     "ndarray": "^1.0.15"
   },
