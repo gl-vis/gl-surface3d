@@ -215,7 +215,7 @@ proto.update = function(params) {
       if(Array.isArray(next)) {
         next = ndarray(next)
       }
-      if(next.shape[0] !== this._field.shape[i]+1) {
+      if(next.shape[0] !== this._field.shape[i]) {
         throw new Error("gl-surface-plot: Incompatible shape")
       }
       if(cur.data.length < next.shape[0]) {
@@ -231,7 +231,7 @@ proto.update = function(params) {
     var ticks = this._ticks
     for(var i=0; i<2; ++i) {
       var cur = ticks[i]
-      var nn = this._field.shape[i]+1
+      var nn = this._field.shape[i]
       if(cur.shape[0] !== nn) {
         geometryNeedsUpdate = true
         if(cur.data.length < nn) {

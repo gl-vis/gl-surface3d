@@ -33,8 +33,8 @@ shell.on("gl-init", function() {
   })
 
   //Create ticks
-  var ticks = [ ndarray(new Float32Array(2*size+1)), ndarray(new Float32Array(2*size+1)) ]
-  for(var i=0; i<=2*size; ++i) {
+  var ticks = [ ndarray(new Float32Array(2*size)), ndarray(new Float32Array(2*size)) ]
+  for(var i=0; i<2*size; ++i) {
     ticks[0].set(i, Math.sqrt(i))
     ticks[1].set(i, i)
   }
