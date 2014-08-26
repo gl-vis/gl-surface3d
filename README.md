@@ -99,6 +99,7 @@ Test if the given selection is contained in the surface.  If true, returns an ob
 **Returns** An object encoding the selected point on the surface with the following properties:
 
 * `position` which is the position of the selected point on the surface
+* `index` a vector encoding the [x,y] index of the closest data point
 
 ### `surface.bounds`
 A pair of 3D arrays representing the lower/upper bounding box for the surface plot.

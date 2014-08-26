@@ -37,8 +37,9 @@ var QUAD = [
   [0, 1]
 ]
 
-function SurfacePickResult(position) {
+function SurfacePickResult(position, index) {
   this.position = position
+  this.index    = index
 }
 
 function genColormap(name) {
@@ -156,7 +157,9 @@ proto.pick = function(selection) {
   return new SurfacePickResult([
     s0*(1.0-fx) + s1*fx, 
     t0*(1.0-fy) + t1*fy, 
-    z])
+    z],
+    [ fx<0.5 ? ix : (ix+1),
+      fy<0.5 ? iy : (iy+1) ])
 }
 
 proto.update = function(params) {
