@@ -186,15 +186,23 @@ proto.update = function(params) {
     var minZ = Infinity
     var maxZ = -Infinity
     var count = (nshape[0]-1) * (nshape[1]-1) * 6
-    var verts = pool.mallocFloat(count)
+    var verts = pool.mallocFloat(2*count)
     var ptr = 0
     for(var i=0; i<nshape[0]-1; ++i) {
       for(var j=0; j<nshape[1]-1; ++j) {
         for(var k=0; k<6; ++k) {
           var v = field.get(i + QUAD[k][0], j + QUAD[k][1])
-          verts[ptr++] = v
-          minZ = Math.min(minZ, v)
-          maxZ = Math.max(maxZ, v)
+          
+          if(isNaN(v)) {
+            verts[ptr++] = 0
+            verts[ptr++] = 1
+          } else {
+            verts[ptr++] = v
+            verts[ptr++] = 0
+        
+            minZ = Math.min(minZ, v)
+            maxZ = Math.max(maxZ, v)
+          }
         }
       }
     }
@@ -313,7 +321,7 @@ function createSurfacePlot(gl, field, params) {
         size: 4
       },
       { buffer: valueBuffer,
-        size: 1
+        size: 2
       }
     ])
   var cmap = createTexture(gl, 256, 1, gl.RGBA, gl.UNSIGNED_BYTE)

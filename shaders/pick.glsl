@@ -4,7 +4,7 @@ uniform vec2 shape;
 uniform vec3 clipBounds[2];
 uniform float pickId;
 
-varying float value;
+varying float value, kill;
 varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
 
@@ -16,7 +16,8 @@ vec2 splitFloat(float v) {
 }
 
 void main() {
-  if(any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {
+  if(kill > 0.0 || 
+    any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {
     discard;
   }
   vec2 ux = splitFloat(planeCoordinate.x / shape.x);
