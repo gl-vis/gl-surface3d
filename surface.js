@@ -246,44 +246,42 @@ proto.update = function(params) {
     }
   }
 
-  if(geometryNeedsUpdate) {
-    var field = this._field
-    var ticks = this._ticks
+  var field = this._field
+  var ticks = this._ticks
 
-    //Update coordinates of field
-    var lo = [ Infinity, Infinity]
-    var hi = [-Infinity,-Infinity]
-    var nshape = field.shape.slice()
-    this.shape = nshape
-    
-    var count = (nshape[0]-1) * (nshape[1]-1) * 6 * 4
-    var verts = pool.mallocFloat(count)
-    var ptr = 0
-    for(var i=0; i<nshape[0]-1; ++i) {
-      for(var j=0; j<nshape[1]-1; ++j) {
+  //Update coordinates of field
+  var lo = [ Infinity, Infinity]
+  var hi = [-Infinity,-Infinity]
+  var nshape = field.shape.slice()
+  this.shape = nshape
+  
+  var count = (nshape[0]-1) * (nshape[1]-1) * 6 * 4
+  var verts = pool.mallocFloat(count)
+  var ptr = 0
+  for(var i=0; i<nshape[0]-1; ++i) {
+    for(var j=0; j<nshape[1]-1; ++j) {
 
-        lo[0] = Math.min(lo[0], ticks[0].get(i))
-        hi[0] = Math.max(hi[0], ticks[0].get(i))
-        lo[1] = Math.min(lo[1], ticks[1].get(j))
-        hi[1] = Math.max(hi[1], ticks[1].get(j))
+      lo[0] = Math.min(lo[0], ticks[0].get(i))
+      hi[0] = Math.max(hi[0], ticks[0].get(i))
+      lo[1] = Math.min(lo[1], ticks[1].get(j))
+      hi[1] = Math.max(hi[1], ticks[1].get(j))
 
-        for(var k=0; k<6; ++k) {
-          verts[ptr++] = i + QUAD[k][0]
-          verts[ptr++] = j + QUAD[k][1]
-          verts[ptr++] = ticks[0].get(i + QUAD[k][0])
-          verts[ptr++] = ticks[1].get(j + QUAD[k][1])
-        }
+      for(var k=0; k<6; ++k) {
+        verts[ptr++] = i + QUAD[k][0]
+        verts[ptr++] = j + QUAD[k][1]
+        verts[ptr++] = ticks[0].get(i + QUAD[k][0])
+        verts[ptr++] = ticks[1].get(j + QUAD[k][1])
       }
     }
-    this._coordinateBuffer.update(verts)
-    pool.freeFloat(verts)
-
-    for(var i=0; i<2; ++i) {
-      this.bounds[0][i] = lo[i]
-      this.bounds[1][i] = hi[i]
-    }
   }
+  this._coordinateBuffer.update(verts)
+  pool.freeFloat(verts)
 
+  for(var i=0; i<2; ++i) {
+    this.bounds[0][i] = lo[i]
+    this.bounds[1][i] = hi[i]
+  }
+  
   if(typeof params.colormap === "string") {
     this._colorMap.setPixels(genColormap(params.colormap))
   } else {
