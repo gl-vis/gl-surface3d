@@ -14,7 +14,7 @@ var mat4 = glm.mat4
 
 var surface, spikes, axes, select, target = null
 
-var size = 256
+var size = 3
 
 shell.on("gl-init", function() {
   var gl = shell.gl
@@ -27,19 +27,17 @@ shell.on("gl-init", function() {
     [0, 0, 1])      //Up direction
 
   //Create field
-  var field = ndarray(new Float32Array(4*size*size), [2*size,2*size])
+  var field = ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1])
   fill(field, function(x,y) {
     return 0.5 * size * diric(10, 5.0*(x-size)/size) * diric(10, 5.0*(y-size)/size)
   })
-
-
   fill(field.lo(10,10).hi(50,50), function() {
     return NaN
   })
 
   //Create ticks
-  var ticks = [ ndarray(new Float32Array(2*size)), ndarray(new Float32Array(2*size)) ]
-  for(var i=0; i<2*size; ++i) {
+  var ticks = [ ndarray(new Float32Array(2*size+1)), ndarray(new Float32Array(2*size+1)) ]
+  for(var i=0; i<2*size+1; ++i) {
     ticks[0].set(i, Math.sqrt(i))
     ticks[1].set(i, i)
   }

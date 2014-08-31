@@ -169,54 +169,19 @@ proto.update = function(params) {
     this.pickId = params.pickId|0
   }
 
-  var geometryNeedsUpdate = false
   if(params.field) {
     var field = params.field
-
-    //Copy field
     if(field.size > this._field.data.length) {
       pool.freeFloat(this._field.data)
       this._field.data = pool.mallocFloat(field.size)
     }
     this._field = ndarray(this._field.data, field.shape)
     ops.assign(this._field, field)
-
-    //Update field values
-    var nshape = field.shape.slice()
-    var minZ = Infinity
-    var maxZ = -Infinity
-    var count = (nshape[0]-1) * (nshape[1]-1) * 6
-    var verts = pool.mallocFloat(2*count)
-    var ptr = 0
-    for(var i=0; i<nshape[0]-1; ++i) {
-      for(var j=0; j<nshape[1]-1; ++j) {
-        for(var k=0; k<6; ++k) {
-          var v = field.get(i + QUAD[k][0], j + QUAD[k][1])
-          
-          if(isNaN(v)) {
-            verts[ptr++] = 0
-            verts[ptr++] = 1
-          } else {
-            verts[ptr++] = v
-            verts[ptr++] = 0
-        
-            minZ = Math.min(minZ, v)
-            maxZ = Math.max(maxZ, v)
-          }
-        }
-      }
-    }
-    this._valueBuffer.update(verts)
-
-    //Update bounding box
-    this.bounds[0][2] = minZ
-    this.bounds[1][2] = maxZ
   }
 
   if(params.ticks) {
     var curTicks = this._ticks
     var nextTicks = params.ticks
-
     for(var i=0; i<2; ++i) {
       var cur = curTicks[i]
       var next = nextTicks[i]
@@ -233,15 +198,12 @@ proto.update = function(params) {
       cur.shape[0] = next.shape[0]
       ops.assign(cur, next)
     }
-
-    geometryNeedsUpdate = true
   } else {
     var ticks = this._ticks
     for(var i=0; i<2; ++i) {
       var cur = ticks[i]
       var nn = this._field.shape[i]
       if(cur.shape[0] !== nn) {
-        geometryNeedsUpdate = true
         if(cur.data.length < nn) {
           pool.free(cur.data)
           cur.data = pool.mallocFloat(nn)
@@ -258,34 +220,74 @@ proto.update = function(params) {
   var ticks = this._ticks
 
   //Update coordinates of field
-  var lo = [ Infinity, Infinity]
-  var hi = [-Infinity,-Infinity]
+  var lo = [ Infinity, Infinity, Infinity]
+  var hi = [-Infinity,-Infinity,-Infinity]
   var nshape = field.shape.slice()
   this.shape = nshape
   
-  var count = (nshape[0]-1) * (nshape[1]-1) * 6 * 4
-  var verts = pool.mallocFloat(count)
-  var ptr = 0
+  var count   = (nshape[0]-1) * (nshape[1]-1) * 6
+  var tverts  = pool.mallocFloat(4*count)
+  var fverts  = pool.mallocFloat(2*count)
+  var tptr    = 0
+  var fptr    = 0
   for(var i=0; i<nshape[0]-1; ++i) {
     for(var j=0; j<nshape[1]-1; ++j) {
-
-      lo[0] = Math.min(lo[0], ticks[0].get(i))
-      hi[0] = Math.max(hi[0], ticks[0].get(i))
-      lo[1] = Math.min(lo[1], ticks[1].get(j))
-      hi[1] = Math.max(hi[1], ticks[1].get(j))
-
-      for(var k=0; k<6; ++k) {
-        verts[ptr++] = i + QUAD[k][0]
-        verts[ptr++] = j + QUAD[k][1]
-        verts[ptr++] = ticks[0].get(i + QUAD[k][0])
-        verts[ptr++] = ticks[1].get(j + QUAD[k][1])
+      var skip_flag = false
+      for(var dx=0; dx<2; ++dx) {
+        var tx = ticks[0].get(i + dx)
+        if(isNaN(tx) || !isFinite(tx)) {
+          skip_flag = true 
+        }
+        for(var dy=0; dy<2; ++dy) {
+          var ty = ticks[1].get(j+dy)
+          if(isNaN(ty) || !isFinite(ty)) {
+            skip_flag = true
+          }
+          var f = field.get(i+dx, j+dy)
+          if(isNaN(f) || !isFinite(f)) {
+            skip_flag = true
+          }
+        }
       }
+      if(skip_flag) {
+        for(var k=0; k<6; ++k) {
+          for(var l=0; l<4; ++l) {
+            tverts[tptr++] = 0
+          }
+          for(var l=0; l<2; ++l) {
+            fverts[fptr++] = 1
+          }
+        }
+      } else {
+        for(var k=0; k<6; ++k) {
+          var tx = ticks[0].get(i + QUAD[k][0])
+          var ty = ticks[1].get(j + QUAD[k][1])
+          var f  = field.get(i+QUAD[k][0], j+QUAD[k][1])
+
+          tverts[tptr++] = i + QUAD[k][0]
+          tverts[tptr++] = j + QUAD[k][1]
+          tverts[tptr++] = tx
+          tverts[tptr++] = ty
+          fverts[fptr++] = f
+          fverts[fptr++] = 0
+
+          lo[0] = Math.min(lo[0], tx)
+          lo[1] = Math.min(lo[1], ty)
+          lo[2] = Math.min(lo[2], f)
+
+          hi[0] = Math.max(hi[0], tx)
+          hi[1] = Math.max(hi[1], ty)
+          hi[2] = Math.max(hi[2], f)
+        }
+      }      
     }
   }
-  this._coordinateBuffer.update(verts)
-  pool.freeFloat(verts)
+  this._valueBuffer.update(fverts)
+  this._coordinateBuffer.update(tverts)
+  pool.freeFloat(tverts)
+  pool.freeFloat(fverts)
 
-  for(var i=0; i<2; ++i) {
+  for(var i=0; i<3; ++i) {
     this.bounds[0][i] = lo[i]
     this.bounds[1][i] = hi[i]
   }
