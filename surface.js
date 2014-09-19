@@ -1,25 +1,25 @@
-"use strict"
+'use strict'
 
 module.exports = createSurfacePlot
 
-var glslify = require("glslify")
-var createBuffer = require("gl-buffer")
-var createVAO = require("gl-vao")
-var createTexture = require("gl-texture2d")
-var pool = require("typedarray-pool")
-var colormap = require("colormap")
-var ops = require("ndarray-ops")
-var pack = require("ndarray-pack")
-var ndarray = require("ndarray")
+var glslify       = require('glslify')
+var createBuffer  = require('gl-buffer')
+var createVAO     = require('gl-vao')
+var createTexture = require('gl-texture2d')
+var pool          = require('typedarray-pool')
+var colormap      = require('colormap')
+var ops           = require('ndarray-ops')
+var pack          = require('ndarray-pack')
+var ndarray       = require('ndarray')
 
 var createShader = glslify({
-  vertex: "./shaders/vertex.glsl",
-  fragment: "./shaders/fragment.glsl"
+  vertex:   './shaders/vertex.glsl',
+  fragment: './shaders/fragment.glsl'
 })
 
 var createPickShader = glslify({
-  vertex: "./shaders/vertex.glsl",
-  fragment: "./shaders/pick.glsl"
+  vertex:   './shaders/vertex.glsl',
+  fragment: './shaders/pick.glsl'
 })
 
 var IDENTITY = [
@@ -46,7 +46,7 @@ function genColormap(name) {
   var x = pack([colormap({
     colormap: name,
     nshades: 256,
-    format: "rgb"
+    format: 'rgb'
   }).map(function(c) {
     return [c[0], c[1], c[2], 255]
   })])
@@ -86,12 +86,12 @@ proto.draw = function(params) {
   
   //Set up uniforms
   this._shader.bind()
-  this._shader.uniforms.model = params.model || IDENTITY
-  this._shader.uniforms.view = params.view || IDENTITY
+  this._shader.uniforms.model      = params.model || IDENTITY
+  this._shader.uniforms.view       = params.view || IDENTITY
   this._shader.uniforms.projection = params.projection || IDENTITY
   this._shader.uniforms.lowerBound = this.bounds[0]
   this._shader.uniforms.upperBound = this.bounds[1]
-  this._shader.uniforms.colormap = this._colorMap.bind(0)
+  this._shader.uniforms.colormap   = this._colorMap.bind(0)
   this._shader.uniforms.clipBounds = this.clipBounds.map(clampVec)
 
   //Draw it
@@ -326,7 +326,7 @@ function createSurfacePlot(gl, field, params) {
         size: 2
       }
     ])
-  var cmap = createTexture(gl, 256, 1, gl.RGBA, gl.UNSIGNED_BYTE)
+  var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
   cmap.minFilter = gl.LINEAR
   cmap.magFilter = gl.LINEAR
   var surface = new SurfacePlot(
