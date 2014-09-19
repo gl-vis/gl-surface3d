@@ -11,16 +11,24 @@ var colormap      = require('colormap')
 var ops           = require('ndarray-ops')
 var pack          = require('ndarray-pack')
 var ndarray       = require('ndarray')
+var surfaceNets   = require('surface-nets')
 
 var createShader = glslify({
-  vertex:   './shaders/vertex.glsl',
-  fragment: './shaders/fragment.glsl'
-})
-
-var createPickShader = glslify({
-  vertex:   './shaders/vertex.glsl',
-  fragment: './shaders/pick.glsl'
-})
+    vertex:   './shaders/vertex.glsl',
+    fragment: './shaders/fragment.glsl'
+  }),
+  createContourShader = glslify({
+    vertex:   './shaders/contour-vertex.glsl',
+    fragment: './shaders/fragment.glsl'
+  }),
+  createPickShader = glslify({
+    vertex:   './shaders/vertex.glsl',
+    fragment: './shaders/pick.glsl'
+  }),
+  createPickContourShader = glslify({
+    vertex:   './shaders/contour-vertex.glsl',
+    fragment: './shaders/pick.glsl'
+  })
 
 var IDENTITY = [
   1, 0, 0, 0,
@@ -62,16 +70,44 @@ function clampVec(v) {
   return result
 }
 
-function SurfacePlot(gl, shape, bounds, shader, pickShader, coordinates, values, vao, colorMap) {
+function SurfacePlot(
+  gl, 
+  shape, 
+  bounds, 
+  shader, 
+  pickShader, 
+  coordinates, 
+  values, 
+  vao, 
+  colorMap,
+  contourShader,
+  contourPickShader,
+  contourBuffer,
+  contourVAO) {
+
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
+
   this._shader = shader
   this._pickShader = pickShader
   this._coordinateBuffer = coordinates
   this._valueBuffer = values
   this._vao = vao
   this._colorMap = colorMap
+
+  this._contourShader     = contourShader
+  this._contourPickShader = contourPickShader
+  this._contourBuffer     = contourBuffer
+  this._contourVAO        = contourVAO
+  this._contourOffsets    = []
+  this._contourCounts     = []
+
+  this.contourWidth       = 1
+  this.contourValues      = []
+  this.showContour        = true
+  this.showSurface        = true
+
   this._field = ndarray(pool.mallocFloat(1024), [0,0])
   this._ticks = [ ndarray(pool.mallocFloat(1024)), ndarray(pool.mallocFloat(1024)) ]
   this.pickId = 1
@@ -84,20 +120,45 @@ proto.draw = function(params) {
   params = params || {}
   var gl = this.gl
   
-  //Set up uniforms
-  this._shader.bind()
-  this._shader.uniforms.model      = params.model || IDENTITY
-  this._shader.uniforms.view       = params.view || IDENTITY
-  this._shader.uniforms.projection = params.projection || IDENTITY
-  this._shader.uniforms.lowerBound = this.bounds[0]
-  this._shader.uniforms.upperBound = this.bounds[1]
-  this._shader.uniforms.colormap   = this._colorMap.bind(0)
-  this._shader.uniforms.clipBounds = this.clipBounds.map(clampVec)
 
-  //Draw it
-  this._vao.bind()
-  this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
-  this._vao.unbind()
+  var uniforms = {
+    model:      params.model || IDENTITY,
+    view:       params.view || IDENTITY,
+    projection: params.projection || IDENTITY,
+    lowerBound: this.bounds[0],
+    upperBound: this.bounds[1],
+    colormap:   this._colorMap.bind(0),
+    clipBounds: this.clipBounds.map(clampVec),
+    height:     0.0
+  }
+
+  if(this.showSurface) {
+    //Set up uniforms
+    this._shader.bind()
+    this._shader.uniforms = uniforms
+
+    //Draw it
+    this._vao.bind()
+    this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
+    this._vao.unbind()
+  }
+
+  if(this.showContour) {
+    var shader = this._contourShader
+
+    gl.lineWidth(this.contourWidth)
+
+    shader.bind()
+    shader.uniforms = uniforms
+
+    var vao = this._contourVAO
+    vao.bind()
+    for(var i=0; i<this.contourValues.length; ++i) {
+      shader.uniforms.height = this.contourValues[i]
+      vao.draw(gl.LINES, this._contourCounts[i], this._contourOffsets[i])
+    }
+    vao.unbind()
+  }
 }
 
 proto.drawPick = function(params) {
@@ -165,8 +226,20 @@ proto.pick = function(selection) {
 proto.update = function(params) {
   params = params || {}
 
-  if("pickId" in params) {
+  if('pickId' in params) {
     this.pickId = params.pickId|0
+  }
+  if('levels' in params) {
+    this.contourValues = params.levels
+  }
+  if('lineWidth' in params) {
+    this.contourWidth = params.lineWidth
+  }
+  if('showContour' in params) {
+    this.showContour = !!params.showContour
+  }
+  if('showSurface' in params) {
+    this.showSurface = !!params.showSurface
   }
 
   if(params.field) {
@@ -189,7 +262,7 @@ proto.update = function(params) {
         next = ndarray(next)
       }
       if(next.shape[0] !== this._field.shape[i]) {
-        throw new Error("gl-surface-plot: Incompatible shape")
+        throw new Error('gl-surface-plot: Incompatible shape')
       }
       if(cur.data.length < next.shape[0]) {
         pool.free(cur.data)
@@ -292,6 +365,42 @@ proto.update = function(params) {
     this.bounds[1][i] = hi[i]
   }
   
+
+  //Update contour lines
+  var levels = this.contourValues
+  var contourVerts = []
+  var levelOffsets = []
+  var levelCounts  = []
+  for(var i=0; i<levels.length; ++i) {
+    var graph = surfaceNets(this._field, levels[i])
+    levelOffsets.push((contourVerts.length/4)|0)
+    for(var j=0; j<graph.cells.length; ++j) {
+      var e = graph.cells[j]
+      for(var k=0; k<2; ++k) {
+        var p = graph.positions[e[k]]
+        for(var l=0; l<2; ++l) {
+          var x = p[l]
+          var ix = Math.floor(x)|0
+          var fx = x - ix
+          var t0 = ticks[0].get(Math.max(ix, 0)|0)
+          var t1 = ticks[0].get(Math.min(ix, nshape[0]-1)|0)
+          contourVerts.push((1.0-fx)*t0 + fx*t1)
+        }
+        contourVerts.push(p[0], p[1])
+      }
+    }
+    levelCounts.push(2*graph.cells.length)
+  }
+  this._contourOffsets  = levelOffsets
+  this._contourCounts   = levelCounts
+
+  var floatBuffer = pool.mallocFloat(contourVerts.length)
+  for(var i=0; i<contourVerts.length; ++i) {
+    floatBuffer[i] = contourVerts[i]
+  }
+  this._contourBuffer.update(floatBuffer)
+  pool.freeFloat(floatBuffer)
+
   if(typeof params.colormap === "string") {
     this._colorMap.setPixels(genColormap(params.colormap))
   } else {
@@ -305,6 +414,10 @@ proto.dispose = function() {
   this._coordinateBuffer.dispose()
   this._valueBuffer.dispose()
   this._colorMap.dispose()
+  this._contourBuffer.dispose()
+  this._contourVAO.dispose()
+  this._contourShader.dispose()
+  this._contourPickShader.dispose()
   pool.freeFloat(this._field.data)
 }
 
@@ -312,10 +425,19 @@ function createSurfacePlot(gl, field, params) {
   var shader = createShader(gl)
   shader.attributes.uv.location = 0
   shader.attributes.f.location = 1
+
   var pickShader = createPickShader(gl)
   pickShader.attributes.uv.location = 0
   pickShader.attributes.f.location = 1
+
+  var contourShader = createContourShader(gl)
+  contourShader.attributes.uv.location = 0
+
+  var contourPickShader = createPickContourShader(gl)
+  contourPickShader.attributes.uv.location = 0
+
   var estimatedSize = (field.shape[0]-1) * (field.shape[1]-1) * 6 * 4
+
   var coordinateBuffer = createBuffer(gl, estimatedSize * 4)
   var valueBuffer = createBuffer(gl, estimatedSize)
   var vao = createVAO(gl, [
@@ -326,6 +448,14 @@ function createSurfacePlot(gl, field, params) {
         size: 2
       }
     ])
+
+  var contourBuffer = createBuffer(gl)
+  var contourVAO = createVAO(gl, [
+    { 
+      buffer: contourBuffer,
+      size: 4
+    }])
+
   var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
   cmap.minFilter = gl.LINEAR
   cmap.magFilter = gl.LINEAR
@@ -338,7 +468,11 @@ function createSurfacePlot(gl, field, params) {
     coordinateBuffer, 
     valueBuffer,
     vao,
-    cmap)
+    cmap,
+    contourShader,
+    contourPickShader,
+    contourBuffer,
+    contourVAO)
   var nparams = {}
   for(var id in params) {
     nparams[id] = params[id]

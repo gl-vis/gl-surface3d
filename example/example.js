@@ -14,7 +14,7 @@ var mat4 = glm.mat4
 
 var surface, spikes, axes, select, target = null
 
-var size = 3
+var size = 256
 
 shell.on("gl-init", function() {
   var gl = shell.gl
@@ -42,7 +42,14 @@ shell.on("gl-init", function() {
     ticks[1].set(i, i)
   }
 
+  var contourLevels = []
+  for(var i=-10; i<=50; ++i) {
+    contourLevels.push(size*i/50.0)
+  }
+  
   surface = createSurface(gl, field, {
+    levels: contourLevels,
+    showSurface: false
   })
 
   spikes = createSpikes(gl, {
@@ -52,7 +59,8 @@ shell.on("gl-init", function() {
   axes = createAxes(gl, {
     bounds: surface.bounds,
     tickSpacing: [0.125*size, 0.125*size, 0.125*size],
-    textSize: size / 32.0
+    textSize: size / 32.0,
+    gridColor: [0.8,0.8,0.8]
   })
 
   select = createSelect(gl, [shell.height, shell.width])
