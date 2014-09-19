@@ -31,9 +31,6 @@ shell.on("gl-init", function() {
   fill(field, function(x,y) {
     return 0.5 * size * diric(10, 5.0*(x-size)/size) * diric(10, 5.0*(y-size)/size)
   })
-  fill(field.lo(10,10).hi(50,50), function() {
-    return NaN
-  })
 
   //Create ticks
   var ticks = [ ndarray(new Float32Array(2*size+1)), ndarray(new Float32Array(2*size+1)) ]
@@ -49,7 +46,10 @@ shell.on("gl-init", function() {
   
   surface = createSurface(gl, field, {
     levels: contourLevels,
+    lineWidth: 3,
+    //showContour: false
     showSurface: false
+
   })
 
   spikes = createSpikes(gl, {

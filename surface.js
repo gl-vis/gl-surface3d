@@ -165,20 +165,45 @@ proto.drawPick = function(params) {
   params = params || {}
   var gl = this.gl
   
-  //Set up uniforms
-  var shader = this._pickShader
-  shader.bind()
-  shader.uniforms.model = params.model || IDENTITY
-  shader.uniforms.view = params.view || IDENTITY
-  shader.uniforms.projection = params.projection || IDENTITY
-  shader.uniforms.clipBounds = this.clipBounds.map(clampVec)
-  shader.uniforms.shape = this._field.shape.slice()
-  shader.uniforms.pickId = this.pickId / 255.0
+  var uniforms = {
+    model:      params.model || IDENTITY,
+    view:       params.view || IDENTITY,
+    projection: params.projection || IDENTITY,
+    clipBounds: this.clipBounds.map(clampVec),
+    height:     0.0,
+    shape:      this._field.shape.slice(),
+    pickId:     this.pickId/255.0,
+    lowerBound: this.bounds[0],
+    upperBound: this.bounds[1]
+  }
 
-  //Draw it
-  this._vao.bind()
-  this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
-  this._vao.unbind()
+  if(this.showSurface) {
+    //Set up uniforms
+    this._pickShader.bind()
+    this._pickShader.uniforms = uniforms
+
+    //Draw it
+    this._vao.bind()
+    this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
+    this._vao.unbind()
+  }
+
+  if(this.showContour) {
+    var shader = this._contourPickShader
+
+    gl.lineWidth(this.contourWidth)
+
+    shader.bind()
+    shader.uniforms = uniforms
+
+    var vao = this._contourVAO
+    vao.bind()
+    for(var i=0; i<this.contourValues.length; ++i) {
+      shader.uniforms.height = this.contourValues[i]
+      vao.draw(gl.LINES, this._contourCounts[i], this._contourOffsets[i])
+    }
+    vao.unbind()
+  }
 }
 
 proto.pick = function(selection) {
@@ -459,6 +484,7 @@ function createSurfacePlot(gl, field, params) {
   var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
   cmap.minFilter = gl.LINEAR
   cmap.magFilter = gl.LINEAR
+
   var surface = new SurfacePlot(
     gl, 
     [0,0], 
@@ -473,12 +499,15 @@ function createSurfacePlot(gl, field, params) {
     contourPickShader,
     contourBuffer,
     contourVAO)
+
   var nparams = {}
   for(var id in params) {
     nparams[id] = params[id]
   }
   nparams.field = field
-  nparams.colormap = nparams.colormap || "jet"
+  nparams.colormap = nparams.colormap || 'jet'
+
   surface.update(nparams)
+
   return surface
 }
