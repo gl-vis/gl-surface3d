@@ -102,6 +102,7 @@ function SurfacePlot(
   this._contourVAO        = contourVAO
   this._contourOffsets    = []
   this._contourCounts     = []
+  this._vertexCount       = 0
 
   this.contourWidth       = 1
   this.contourValues      = []
@@ -111,8 +112,9 @@ function SurfacePlot(
   this.contourTint        = 0
   this.contourColor       = [0,0,0,1]
 
-  this._field = ndarray(pool.mallocFloat(1024), [0,0])
-  this._ticks = [ ndarray(pool.mallocFloat(1024)), ndarray(pool.mallocFloat(1024)) ]
+  //Store xyz field now
+  this._field = [ ndarray(pool.mallocFloat(1024), [0,0]), ndarray(pool.mallocFloat(1024), [0,0]), ndarray(pool.mallocFloat(1024), [0,0]) ]
+
   this.pickId = 1
   this.clipBounds = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
 }
@@ -144,7 +146,7 @@ proto.draw = function(params) {
 
     //Draw it
     this._vao.bind()
-    this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
+    this._vao.draw(gl.TRIANGLES, this._vertexCount)
     this._vao.unbind()
   }
 
@@ -179,7 +181,7 @@ proto.drawPick = function(params) {
     projection:   params.projection || IDENTITY,
     clipBounds:   this.clipBounds.map(clampVec),
     height:       0.0,
-    shape:        this._field.shape.slice(),
+    shape:        this._field[2].shape.slice(),
     pickId:       this.pickId/255.0,
     lowerBound:   this.bounds[0],
     upperBound:   this.bounds[1]
@@ -192,7 +194,7 @@ proto.drawPick = function(params) {
 
     //Draw it
     this._vao.bind()
-    this._vao.draw(gl.TRIANGLES, (this.shape[0]-1) * (this.shape[1]-1) * 6)
+    this._vao.draw(gl.TRIANGLES, this._vertexCount)
     this._vao.unbind()
   }
 
@@ -223,37 +225,61 @@ proto.pick = function(selection) {
     return null
   }
 
-  var x = this._field.shape[0] * (selection.value[0] + (selection.value[2]>>4)/16.0)/255.0
+  var shape = this._field[2].shape.slice()
+
+  var x = shape[0] * (selection.value[0] + (selection.value[2]>>4)/16.0)/255.0
   var ix = Math.floor(x)
   var fx = x - ix
 
-  var y = this._field.shape[1] * (selection.value[1] + (selection.value[2]&15)/16.0)/255.0
+  var y = shape[1] * (selection.value[1] + (selection.value[2]&15)/16.0)/255.0
   var iy = Math.floor(y)
   var fy = y - iy
 
-  var z = 0.0
+  var pos = [0,0,0]
   for(var dx=0; dx<2; ++dx) {
     var s = dx ? fx : 1.0 - fx
     for(var dy=0; dy<2; ++dy) {
       var t = dy ? fy : 1.0 - fy
-      var f = this._field.get(
-        Math.min(ix + dx, this._field.shape[0]-1),
-        Math.min(iy + dy, this._field.shape[1]-1))
-      z += f * s * t
+
+      var r = Math.min(ix + dx, shape[0]-1)
+      var c = Math.min(iy + dy, shape[1]-1)
+      var w = s * t
+
+      for(var i=0; i<3; ++i) {
+        pos[i] += this._field[i].get(r,c) * w
+      }
     }
   }
 
-  var s0 = this._ticks[0].get(ix)
-  var s1 = this._ticks[0].get(ix+1)
-  var t0 = this._ticks[1].get(iy)
-  var t1 = this._ticks[1].get(iy+1)
-
-  return new SurfacePickResult([
-    s0*(1.0-fx) + s1*fx, 
-    t0*(1.0-fy) + t1*fy, 
-    z],
+  return new SurfacePickResult(pos,
     [ fx<0.5 ? ix : (ix+1),
       fy<0.5 ? iy : (iy+1) ])
+}
+
+function padField(field) {
+  var nshape = [ field.shape[0]+2, field.shape[1]+2 ]
+  var ndata  = pool.mallocFloat(nshape[0]*nshape[1])
+  var nfield = ndarray(ndata, nshape)
+
+  //Center
+  ops.assign(nfield.lo(1,1).hi(field.shape[0], field.shape[1]), field)
+
+  //Edges
+  ops.assign(nfield.lo(1).hi(field.shape[0], 1), 
+              field.hi(field.shape[0], 1))
+  ops.assign(nfield.lo(1,nshape[1]-1).hi(field.shape[0],1),
+              field.lo(0,field.shape[1]-1).hi(field.shape[0],1))
+  ops.assign(nfield.lo(0,1).hi(1,field.shape[1]),
+              field.hi(1))
+  ops.assign(nfield.lo(nshape[0]-1,1).hi(1,field.shape[1]),
+              field.lo(field.shape[0]-1))
+  //Corners
+  nfield.set(0,0, field.get(0,0))
+  nfield.set(0,nshape[1]-1, field.get(0,field.shape[1]-1))
+  nfield.set(nshape[0]-1,0, field.get(field.shape[0]-1,0))
+  nfield.set(nshape[0]-1,nshape[1]-1, field.get(field.shape[0]-1,field.shape[1]-1))
+
+  return nfield
 }
 
 proto.update = function(params) {
@@ -283,127 +309,133 @@ proto.update = function(params) {
 
   if(params.field) {
     var field = params.field
-    if(field.size > this._field.data.length) {
-      pool.freeFloat(this._field.data)
-      this._field.data = pool.mallocFloat(field.size)
+    if(field.size > this._field[2].data.length) {
+      pool.freeFloat(this._field[2].data)
+      this._field[2].data = pool.mallocFloat(field.size)
     }
-    this._field = ndarray(this._field.data, field.shape)
-    ops.assign(this._field, field)
+    this._field[2] = ndarray(this._field[2].data, field.shape)
+    ops.assign(this._field[2], field)
   }
 
-  if(params.ticks) {
-    var curTicks = this._ticks
-    var nextTicks = params.ticks
-    for(var i=0; i<2; ++i) {
-      var cur = curTicks[i]
-      var next = nextTicks[i]
-      if(Array.isArray(next)) {
-        next = ndarray(next)
-      }
-      if(next.shape[0] !== this._field.shape[i]) {
-        throw new Error('gl-surface-plot: Incompatible shape')
-      }
-      if(cur.data.length < next.shape[0]) {
-        pool.free(cur.data)
-        cur.data = pool.mallocFloat(next.shape[0])
-      }
-      cur.shape[0] = next.shape[0]
-      ops.assign(cur, next)
+  //Save shape of field
+  var shape = this._field[2].shape.slice()
+  this.shape = shape
+
+  //Resize coordinate fields if necessary
+  for(var i=0; i<2; ++i) {
+    if(this._field[2].size > this._field[i].data.length) {
+      pool.freeFloat(this._field[i].data)
+      this._field[i].data = pool.mallocFloat(this._field[2].size)
     }
+    this._field[i] = ndarray(this._field[i].data, shape)
+  }
+
+  //Generate x/y coordinates
+  if(params.coords) {
+    var coords = params.coords
+    if(!Array.isArray(coords) || coords.length !== 2) {
+      throw new Error('gl-surface: invalid coordinates for x/y')
+    }
+    for(var i=0; i<2; ++i) {
+      var coord = coords[i]
+      for(var j=0; j<2; ++j) {
+        if(coord.shape[j] !== shape[j]) {
+          throw new Error('gl-surface: coords have incorrect shape')
+        }
+      }
+      ops.assign(this._field[i], coord)
+    }
+  } else if(params.ticks) {
+    var ticks = params.ticks
+    if(!Array.isArray(ticks) || ticks.length !== 2) {
+      throw new Error('gl-surface: invalid ticks')
+    }
+    for(var i=0; i<2; ++i) {
+      var tick = ticks[i]
+      if(Array.isArray(tick) || tick.length) {
+        tick = ndarray(tick)
+      }
+      if(tick.shape[0] !== shape[i]) {
+        throw new Error('gl-surface: invalid tick length')
+      }
+      //Make a copy view of the tick array
+      var tick2 = ndarray(tick.data, shape)
+      tick2.stride[i] = tick.stride[0]
+      tick2.stride[i^1] = 0
+
+      //Fill in field array
+      ops.assign(this._field[i], tick2)
+    }    
   } else {
-    var ticks = this._ticks
-    for(var i=0; i<2; ++i) {
-      var cur = ticks[i]
-      var nn = this._field.shape[i]
-      if(cur.shape[0] !== nn) {
-        if(cur.data.length < nn) {
-          pool.free(cur.data)
-          cur.data = pool.mallocFloat(nn)
-        }
-        cur.shape[0] = nn
-        for(var j=0; j<nn; ++j) {
-          cur.set(j, j)
-        }
+    for(var j=0; j<shape[0]; ++j) {
+      for(var i=0; i<shape[1]; ++i) {
+        this._field[0].set(i,j,j)
+        this._field[1].set(i,j,i)
       }
     }
   }
 
-  var field = this._field
-  var ticks = this._ticks
+  var fields = this._field
 
-  //Update coordinates of field
+  //Initialize surface
   var lo = [ Infinity, Infinity, Infinity]
   var hi = [-Infinity,-Infinity,-Infinity]
-  var nshape = field.shape.slice()
-  this.shape = nshape
-  
-  var count   = (nshape[0]-1) * (nshape[1]-1) * 6
+  var count   = (shape[0]-1) * (shape[1]-1) * 6
   var tverts  = pool.mallocFloat(4*count)
   var fverts  = pool.mallocFloat(2*count)
   var tptr    = 0
   var fptr    = 0
-  for(var i=0; i<nshape[0]-1; ++i) {
-    for(var j=0; j<nshape[1]-1; ++j) {
-      var skip_flag = false
+  var vertexCount = 0
+  for(var i=0; i<shape[0]-1; ++i) {
+j_loop:
+    for(var j=0; j<shape[1]-1; ++j) {
+
+      //Test for NaNs
       for(var dx=0; dx<2; ++dx) {
-        var tx = ticks[0].get(i + dx)
-        if(isNaN(tx) || !isFinite(tx)) {
-          skip_flag = true 
-        }
         for(var dy=0; dy<2; ++dy) {
-          var ty = ticks[1].get(j+dy)
-          if(isNaN(ty) || !isFinite(ty)) {
-            skip_flag = true
-          }
-          var f = field.get(i+dx, j+dy)
-          if(isNaN(f) || !isFinite(f)) {
-            skip_flag = true
+          for(var k=0; k<3; ++k) {
+            var f = this._field[k].get(i+dx, j+dy)
+            if(isNaN(f) || !isFinite(f)) {
+              continue j_loop
+            }
           }
         }
       }
-      if(skip_flag) {
-        for(var k=0; k<6; ++k) {
-          for(var l=0; l<4; ++l) {
-            tverts[tptr++] = 0
-          }
-          for(var l=0; l<2; ++l) {
-            fverts[fptr++] = 1
-          }
-        }
-      } else {
-        for(var k=0; k<6; ++k) {
-          var tx = ticks[0].get(i + QUAD[k][0])
-          var ty = ticks[1].get(j + QUAD[k][1])
-          var f  = field.get(i+QUAD[k][0], j+QUAD[k][1])
+      for(var k=0; k<6; ++k) {
+        var r = i + QUAD[k][0]
+        var c = j + QUAD[k][1]
 
-          tverts[tptr++] = i + QUAD[k][0]
-          tverts[tptr++] = j + QUAD[k][1]
-          tverts[tptr++] = tx
-          tverts[tptr++] = ty
-          fverts[fptr++] = f
-          fverts[fptr++] = 0
+        var tx = this._field[0].get(r, c)
+        var ty = this._field[1].get(r, c)
+        var f  = this._field[2].get(r, c)
 
-          lo[0] = Math.min(lo[0], tx)
-          lo[1] = Math.min(lo[1], ty)
-          lo[2] = Math.min(lo[2], f)
+        tverts[tptr++] = r
+        tverts[tptr++] = c
+        tverts[tptr++] = tx
+        tverts[tptr++] = ty
+        fverts[fptr++] = f
+        fverts[fptr++] = 0
 
-          hi[0] = Math.max(hi[0], tx)
-          hi[1] = Math.max(hi[1], ty)
-          hi[2] = Math.max(hi[2], f)
-        }
-      }      
+        lo[0] = Math.min(lo[0], tx)
+        lo[1] = Math.min(lo[1], ty)
+        lo[2] = Math.min(lo[2], f)
+
+        hi[0] = Math.max(hi[0], tx)
+        hi[1] = Math.max(hi[1], ty)
+        hi[2] = Math.max(hi[2], f)
+
+        vertexCount += 1
+      }
     }
   }
+  this._vertexCount = vertexCount
   this._valueBuffer.update(fverts)
   this._coordinateBuffer.update(tverts)
   pool.freeFloat(tverts)
   pool.freeFloat(fverts)
 
-  for(var i=0; i<3; ++i) {
-    this.bounds[0][i] = lo[i]
-    this.bounds[1][i] = hi[i]
-  }
-  
+  //Update bounds
+  this.bounds = [lo, hi]
 
   //Update contour lines
   var levels = this.contourValues
@@ -411,26 +443,74 @@ proto.update = function(params) {
   var levelOffsets = []
   var levelCounts  = []
 
+  var parts = [0,0]
+  var graphParts = [0,0]
+
+  var padded = padField(this._field[2])
+
   for(var i=0; i<levels.length; ++i) {
-    var graph = surfaceNets(this._field, levels[i])
+    var graph = surfaceNets(padded, levels[i])
     levelOffsets.push((contourVerts.length/4)|0)
+    var vertexCount = 0
+
+edge_loop:
     for(var j=0; j<graph.cells.length; ++j) {
       var e = graph.cells[j]
       for(var k=0; k<2; ++k) {
         var p = graph.positions[e[k]]
-        for(var l=0; l<2; ++l) {
-          var x = p[l]
-          var ix = Math.floor(0.5 * x)|0
-          var fx = x - ix
-          var t0 = ticks[0].get(Math.max(ix, 0)|0)
-          var t1 = ticks[0].get(Math.min(ix+1, nshape[0]-1)|0)
-          contourVerts.push((1.0-fx)*t0 + fx*t1)
+
+        var x = p[0]-1
+        var ix = Math.floor(x)|0
+        var fx = x - ix
+
+        var y = p[1]-1
+        var iy = Math.floor(y)|0
+        var fy = y - iy
+
+        
+        var hole = false
+dd_loop:
+        for(var dd=0; dd<2; ++dd) {
+          parts[dd] = 0.0
+          for(var dx=0; dx<2; ++dx) {
+            var s = dx ? fx : 1.0 - fx
+            var r = Math.min(Math.max(ix+dx, 0), shape[0]-1)|0
+            for(var dy=0; dy<2; ++dy) {
+              var t = dy ? fy : 1.0 - fy
+              var c = Math.min(Math.max(iy+dy, 0), shape[1]-1)|0
+
+              var f = this._field[dd].get(r,c)
+              if(!isFinite(f) || isNaN(f)) {
+                hole = true
+                break dd_loop
+              }
+
+              var w = s * t
+              parts[dd] += w * this._field[dd].get(r, c)
+            }
+          }
         }
-        contourVerts.push(p[0], p[1])
+
+        if(!hole) {
+          contourVerts.push(parts[0], parts[1], p[0], p[1])
+          vertexCount += 1
+        } else {
+          if(k > 0) {
+            //If we already added first edge, pop off verts
+            for(var l=0; l<4; ++l) {
+              contourVerts.pop()
+            }
+            vertexCount -= 1
+          }
+          continue edge_loop
+        }
       }
     }
-    levelCounts.push(2*graph.cells.length)
+    levelCounts.push(vertexCount)
   }
+
+  pool.freeFloat(padded.data)
+
   this._contourOffsets  = levelOffsets
   this._contourCounts   = levelCounts
 
@@ -458,7 +538,9 @@ proto.dispose = function() {
   this._contourVAO.dispose()
   this._contourShader.dispose()
   this._contourPickShader.dispose()
-  pool.freeFloat(this._field.data)
+  for(var i=0; i<3; ++i) {
+    pool.freeFloat(this._field[i].data)
+  }
 }
 
 function createSurfacePlot(gl, field, params) {

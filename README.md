@@ -84,7 +84,7 @@ Updates the surface.  The parameter object may contain any of the following prop
 * `lineWidth` the width fo the contour lines
 * `contourTint` the amount of tint of the contour lines
 * `contourColor` the color of the contour line tint
-* `levels` the contour levels
+* `levels` an array representing the level of the isolines.
 
 ### `surface.draw([params])`
 Draws the surface.  Accepts the following parameters

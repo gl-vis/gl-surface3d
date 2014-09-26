@@ -23,31 +23,49 @@ shell.on("gl-init", function() {
   //Set up camera
   camera.lookAt(
     [-size, -size, 1.5*size],      //Eye position
-    [size, size, 0.5 * size], //Eye target
+    [0,0,0], //Eye target
     [0, 0, 1])      //Up direction
 
   //Create field
   var field = ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1])
+
+  /*
   fill(field, function(x,y) {
     return 0.5 * size * diric(10, 5.0*(x-size)/size) * diric(10, 5.0*(y-size)/size)
   })
+  */
 
-  //Create ticks
-  var ticks = [ ndarray(new Float32Array(2*size+1)), ndarray(new Float32Array(2*size+1)) ]
-  for(var i=0; i<2*size+1; ++i) {
-    ticks[0].set(i, Math.sqrt(i))
-    ticks[1].set(i, i)
+  var coords = [
+    ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1]),
+    ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1])
+  ]
+
+  var x = coords[0]
+  var y = coords[1]
+  var z = field
+
+  for(var i=0; i<=2*size; ++i) {
+    var theta = Math.PI * (i - size) / size
+    for(var j=0; j<=2*size; ++j) {
+      var phi = Math.PI * (j - size) / size
+
+      x.set(i, j, (50.0 + 20.0 * Math.cos(theta)) * Math.cos(phi))
+      y.set(i, j, (50.0 + 20.0 * Math.cos(theta)) * Math.sin(phi))
+      z.set(i, j, 20.0 * Math.sin(theta))
+    }
   }
 
+
   var contourLevels = []
-  for(var i=-10; i<=50; ++i) {
-    contourLevels.push(size*i/50.0)
+  for(var i=-5; i<=5; ++i) {
+    contourLevels.push(20*i/5.0)
   }
   
   surface = createSurface(gl, field, {
     levels: contourLevels,
     lineWidth: 3,
-    contourTint: 1
+    contourTint: 1,
+    coords: coords
     //showContour: false
     //showSurface: false
 
