@@ -79,6 +79,12 @@ Updates the surface.  The parameter object may contain any of the following prop
 * `colormap` the name of the new color map for the surface
 * `pickId` is the picking id for the surface
 * `ticks` is a pair of arrays of ticks representing the spacing of the points for the axes of the surface
+* `showSurface` if set, draw the surface
+* `showContour` if set, draw contour lines
+* `lineWidth` the width fo the contour lines
+* `contourTint` the amount of tint of the contour lines
+* `contourColor` the color of the contour line tint
+* `levels` the contour levels
 
 ### `surface.draw([params])`
 Draws the surface.  Accepts the following parameters
