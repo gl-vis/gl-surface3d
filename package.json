@@ -1,6 +1,6 @@
 {
   "name": "gl-surface-plot",
-  "version": "1.1.0",
+  "version": "3.1.2",
   "description": "Renders 2D surfaces",
   "main": "surface.js",
   "directories": {
@@ -10,13 +10,14 @@
     "glslify": "^1.0.0",
     "gl-buffer": "^2.0.3",
     "gl-vao": "^1.1.1",
-    "gl-texture2d": "^1.0.0",
+    "gl-texture2d": "^2.0.0",
     "typedarray-pool": "^1.0.0",
     "ndarray-pack": "^1.0.1",
     "ndarray-ops": "^1.2.1",
-    "colormap": "^0.3.7",
+    "colormap": "^1.1.1",
     "ndarray-scratch": "^1.1.1",
-    "ndarray": "^1.0.15"
+    "ndarray": "^1.0.15",
+    "surface-nets": "^1.0.2"
   },
   "devDependencies": {
     "gl-now": "^1.3.1",

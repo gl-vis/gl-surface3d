@@ -65,10 +65,10 @@ Creates a surface plot object
 
 * `gl` is a WebGL context
 * `field` is a 2D ndarray
-* `pickId` is the picking id for the surface
 * `params` is an optional collection of arguments that contains any of the following:
 
     + `colormap` - the name of the color map to use for the surface (default "jet")
+    + `pickId` is the picking id for the surface
 
 **Returns** A surface object
 
@@ -78,6 +78,13 @@ Updates the surface.  The parameter object may contain any of the following prop
 * `field` a new 2D field encoded as an ndarray
 * `colormap` the name of the new color map for the surface
 * `pickId` is the picking id for the surface
+* `ticks` is a pair of arrays of ticks representing the spacing of the points for the axes of the surface
+* `showSurface` if set, draw the surface
+* `showContour` if set, draw contour lines
+* `lineWidth` the width fo the contour lines
+* `contourTint` the amount of tint of the contour lines
+* `contourColor` the color of the contour line tint
+* `levels` an array representing the level of the isolines.
 
 ### `surface.draw([params])`
 Draws the surface.  Accepts the following parameters
@@ -98,6 +105,7 @@ Test if the given selection is contained in the surface.  If true, returns an ob
 **Returns** An object encoding the selected point on the surface with the following properties:
 
 * `position` which is the position of the selected point on the surface
+* `index` a vector encoding the [x,y] index of the closest data point
 
 ### `surface.bounds`
 A pair of 3D arrays representing the lower/upper bounding box for the surface plot.
