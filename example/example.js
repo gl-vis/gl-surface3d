@@ -47,8 +47,9 @@ shell.on("gl-init", function() {
   surface = createSurface(gl, field, {
     levels: contourLevels,
     lineWidth: 3,
+    contourTint: 1
     //showContour: false
-    showSurface: false
+    //showSurface: false
 
   })
 

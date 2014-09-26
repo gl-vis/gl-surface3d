@@ -108,6 +108,9 @@ function SurfacePlot(
   this.showContour        = true
   this.showSurface        = true
 
+  this.contourTint        = 0
+  this.contourColor       = [0,0,0,1]
+
   this._field = ndarray(pool.mallocFloat(1024), [0,0])
   this._ticks = [ ndarray(pool.mallocFloat(1024)), ndarray(pool.mallocFloat(1024)) ]
   this.pickId = 1
@@ -128,7 +131,10 @@ proto.draw = function(params) {
     upperBound: this.bounds[1],
     colormap:   this._colorMap.bind(0),
     clipBounds: this.clipBounds.map(clampVec),
-    height:     0.0
+    height:     0.0,
+    contourTint:  0,
+    zOffset:      0,
+    contourColor: this.contourColor
   }
 
   if(this.showSurface) {
@@ -146,6 +152,9 @@ proto.draw = function(params) {
     var shader = this._contourShader
 
     gl.lineWidth(this.contourWidth)
+
+    uniforms.zOffset = -1e-3
+    uniforms.contourTint = this.contourTint
 
     shader.bind()
     shader.uniforms = uniforms
@@ -165,15 +174,15 @@ proto.drawPick = function(params) {
   var gl = this.gl
   
   var uniforms = {
-    model:      params.model || IDENTITY,
-    view:       params.view || IDENTITY,
-    projection: params.projection || IDENTITY,
-    clipBounds: this.clipBounds.map(clampVec),
-    height:     0.0,
-    shape:      this._field.shape.slice(),
-    pickId:     this.pickId/255.0,
-    lowerBound: this.bounds[0],
-    upperBound: this.bounds[1]
+    model:        params.model || IDENTITY,
+    view:         params.view || IDENTITY,
+    projection:   params.projection || IDENTITY,
+    clipBounds:   this.clipBounds.map(clampVec),
+    height:       0.0,
+    shape:        this._field.shape.slice(),
+    pickId:       this.pickId/255.0,
+    lowerBound:   this.bounds[0],
+    upperBound:   this.bounds[1]
   }
 
   if(this.showSurface) {
@@ -264,6 +273,12 @@ proto.update = function(params) {
   }
   if('showSurface' in params) {
     this.showSurface = !!params.showSurface
+  }
+  if('contourTint' in params) {
+    this.contourTint = +params.contourTint
+  }
+  if('contourColor' in params) {
+    this.contourColor = params.contourColor
   }
 
   if(params.field) {
@@ -395,6 +410,7 @@ proto.update = function(params) {
   var contourVerts = []
   var levelOffsets = []
   var levelCounts  = []
+
   for(var i=0; i<levels.length; ++i) {
     var graph = surfaceNets(this._field, levels[i])
     levelOffsets.push((contourVerts.length/4)|0)
@@ -404,7 +420,7 @@ proto.update = function(params) {
         var p = graph.positions[e[k]]
         for(var l=0; l<2; ++l) {
           var x = p[l]
-          var ix = Math.floor(x)|0
+          var ix = Math.floor(0.5 * x)|0
           var fx = x - ix
           var t0 = ticks[0].get(Math.max(ix, 0)|0)
           var t1 = ticks[0].get(Math.min(ix+1, nshape[0]-1)|0)
