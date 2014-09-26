@@ -58,28 +58,31 @@ shell.on("gl-init", function() {
 
   var contourLevels = []
   for(var i=-5; i<=5; ++i) {
-    contourLevels.push(20*i/5.0)
+    contourLevels.push(20*(i+0.3)/6.0)
   }
   
   surface = createSurface(gl, field, {
     levels: contourLevels,
     lineWidth: 3,
     contourTint: 1,
-    coords: coords
+    coords: coords,
+    contourProject: [true, true, true]
+    //surfaceProject: [true, true, true]
     //showContour: false
     //showSurface: false
-
-  })
-
-  spikes = createSpikes(gl, {
-    bounds: surface.bounds
   })
 
   axes = createAxes(gl, {
-    bounds: surface.bounds,
+    bounds: [[-96,-96,-32],[96,96,32]],
     tickSpacing: [0.125*size, 0.125*size, 0.125*size],
     textSize: size / 32.0,
-    gridColor: [0.8,0.8,0.8]
+    gridColor: [0.8,0.8,0.8],
+    tickPad: 8,
+    labelPad: 12
+  })
+
+  spikes = createSpikes(gl, {
+    bounds: axes.bounds
   })
 
   select = createSelect(gl, [shell.height, shell.width])
@@ -101,11 +104,15 @@ shell.on("gl-render", function() {
 
   drawPick(cameraParams)
 
+  surface.axesBounds = axes.bounds
   surface.draw(cameraParams)
   axes.draw(cameraParams)
 
   if(target) {
     spikes.position = target.position
     spikes.draw(cameraParams)
+    surface.highlightLevel = target.level
+  } else {
+    surface.highlightLevel = -1
   }
 })

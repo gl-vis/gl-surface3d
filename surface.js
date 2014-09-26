@@ -12,6 +12,9 @@ var ops           = require('ndarray-ops')
 var pack          = require('ndarray-pack')
 var ndarray       = require('ndarray')
 var surfaceNets   = require('surface-nets')
+var getCubeProps  = require('gl-axes/lib/cube')
+var multiply      = require('gl-mat4/multiply')
+var bsearch       = require('binary-search-bounds')
 
 var createShader = glslify({
     vertex:   './shaders/vertex.glsl',
@@ -45,9 +48,10 @@ var QUAD = [
   [0, 1]
 ]
 
-function SurfacePickResult(position, index) {
-  this.position = position
-  this.index    = index
+function SurfacePickResult(position, index, level) {
+  this.position     = position
+  this.index        = index
+  this.level = level
 }
 
 function genColormap(name) {
@@ -110,7 +114,13 @@ function SurfacePlot(
   this.showSurface        = true
 
   this.contourTint        = 0
-  this.contourColor       = [0,0,0,1]
+  this.contourColor       = [0.5,0.5,0.5,1]
+  this.highlightColor     = [0,0,0,1]
+  this.highlightLevel     = -1
+
+  this.axesBounds         = [[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]]
+  this.surfaceProject     = [ false, false, false ]
+  this.contourProject     = [ false, false, false ]
 
   //Store xyz field now
   this._field = [ ndarray(pool.mallocFloat(1024), [0,0]), ndarray(pool.mallocFloat(1024), [0,0]), ndarray(pool.mallocFloat(1024), [0,0]) ]
@@ -120,6 +130,47 @@ function SurfacePlot(
 }
 
 var proto = SurfacePlot.prototype
+
+function computeProjectionData(camera, obj) {
+  //Compute cube properties
+  var cubeProps = getCubeProps(
+      camera.model, 
+      camera.view, 
+      camera.projection, 
+      obj.axesBounds)
+  var cubeAxis  = cubeProps.axis
+
+  var showSurface = obj.showSurface
+  var showContour = obj.showContour
+  var projections = [null,null,null]
+  var clipRects   = [null,null,null]
+  for(var i=0; i<3; ++i) {
+    showSurface = showSurface || obj.surfaceProject[i]
+    showContour = showContour || obj.contourProject[i]
+
+    if(obj.surfaceProject[i] || obj.contourProject[i]) {
+      //Construct projection onto axis
+      var axisSquish = IDENTITY.slice()
+
+      axisSquish[5*i] = 0
+      axisSquish[12+i] = obj.axesBounds[+(cubeAxis[i]>0)][i]
+      multiply(axisSquish, camera.model, axisSquish)
+      projections[i] = axisSquish
+
+      var nclipBounds = [obj.clipBounds[0].slice(), obj.clipBounds[1].slice()]
+      nclipBounds[0][i] = -1e8
+      nclipBounds[1][i] = 1e8
+      clipRects[i] = nclipBounds
+    }
+  }
+
+  return {
+    showSurface: showSurface,
+    showContour: showContour,
+    projections: projections,
+    clipBounds: clipRects
+  }
+}
 
 proto.draw = function(params) {
   params = params || {}
@@ -139,18 +190,34 @@ proto.draw = function(params) {
     contourColor: this.contourColor
   }
 
-  if(this.showSurface) {
+  var projectData = computeProjectionData(uniforms, this)
+
+  if(projectData.showSurface) {
     //Set up uniforms
     this._shader.bind()
     this._shader.uniforms = uniforms
 
     //Draw it
     this._vao.bind()
-    this._vao.draw(gl.TRIANGLES, this._vertexCount)
+
+    if(this.showSurface) {
+      this._vao.draw(gl.TRIANGLES, this._vertexCount)
+    }
+
+    //Draw projections of surface
+    for(var i=0; i<3; ++i) {
+      if(!this.surfaceProject[i]) {
+        continue
+      }
+      this._shader.uniforms.model = projectData.projections[i]
+      this._shader.uniforms.clipBounds = projectData.clipBounds[i]
+      this._vao.draw(gl.TRIANGLES, this._vertexCount)
+    }
+
     this._vao.unbind()
   }
 
-  if(this.showContour) {
+  if(projectData.showContour) {
     var shader = this._contourShader
 
     gl.lineWidth(this.contourWidth)
@@ -163,10 +230,35 @@ proto.draw = function(params) {
 
     var vao = this._contourVAO
     vao.bind()
-    for(var i=0; i<this.contourValues.length; ++i) {
-      shader.uniforms.height = this.contourValues[i]
-      vao.draw(gl.LINES, this._contourCounts[i], this._contourOffsets[i])
+    for(var j=0; j<this.contourValues.length; ++j) {
+      if(j === this.highlightLevel) {
+        shader.uniforms.contourColor = this.highlightColor
+      } else {
+        shader.uniforms.contourColor = this.contourColor
+      }
+      shader.uniforms.height = this.contourValues[j]
+      vao.draw(gl.LINES, this._contourCounts[j], this._contourOffsets[j])
     }
+
+    //Draw projections of surface
+    for(var i=0; i<3; ++i) {
+      if(!this.contourProject[i]) {
+        continue
+      }
+      shader.uniforms.model = projectData.projections[i]
+      shader.uniforms.clipBounds = projectData.clipBounds[i]
+
+      for(var j=0; j<this.contourValues.length; ++j) {
+        if(j === this.highlightLevel) {
+          shader.uniforms.contourColor = this.highlightColor
+        } else {
+          shader.uniforms.contourColor = this.contourColor
+        }
+        shader.uniforms.height = this.contourValues[j]
+        vao.draw(gl.LINES, this._contourCounts[j], this._contourOffsets[j])
+      }
+    }
+
     vao.unbind()
   }
 }
@@ -184,10 +276,13 @@ proto.drawPick = function(params) {
     shape:        this._field[2].shape.slice(),
     pickId:       this.pickId/255.0,
     lowerBound:   this.bounds[0],
-    upperBound:   this.bounds[1]
+    upperBound:   this.bounds[1],
+    zOffset:      0.0
   }
 
-  if(this.showSurface) {
+  var projectData = computeProjectionData(uniforms, this)
+
+  if(projectData.showSurface) {
     //Set up uniforms
     this._pickShader.bind()
     this._pickShader.uniforms = uniforms
@@ -195,10 +290,21 @@ proto.drawPick = function(params) {
     //Draw it
     this._vao.bind()
     this._vao.draw(gl.TRIANGLES, this._vertexCount)
+
+    //Draw projections of surface
+    for(var i=0; i<3; ++i) {
+      if(!this.surfaceProject[i]) {
+        continue
+      }
+      this._pickShader.uniforms.model = projectData.projections[i]
+      this._pickShader.uniforms.clipBounds = projectData.clipBounds[i]
+      this._vao.draw(gl.TRIANGLES, this._vertexCount)
+    }
+
     this._vao.unbind()
   }
 
-  if(this.showContour) {
+  if(projectData.showContour) {
     var shader = this._contourPickShader
 
     gl.lineWidth(this.contourWidth)
@@ -208,10 +314,26 @@ proto.drawPick = function(params) {
 
     var vao = this._contourVAO
     vao.bind()
+
     for(var i=0; i<this.contourValues.length; ++i) {
       shader.uniforms.height = this.contourValues[i]
       vao.draw(gl.LINES, this._contourCounts[i], this._contourOffsets[i])
     }
+
+    //Draw projections of surface
+    for(var i=0; i<3; ++i) {
+      if(!this.contourProject[i]) {
+        continue
+      }
+      shader.uniforms.model = projectData.projections[i]
+      shader.uniforms.clipBounds = projectData.clipBounds[i]
+
+      for(var j=0; j<this.contourValues.length; ++j) {
+        shader.uniforms.height = this.contourValues[j]
+        vao.draw(gl.LINES, this._contourCounts[j], this._contourOffsets[j])
+      }
+    }
+
     vao.unbind()
   }
 }
@@ -251,9 +373,24 @@ proto.pick = function(selection) {
     }
   }
 
+  //Find closest level
+  var levelIndex = bsearch.le(this.contourValues, pos[2])
+  if(levelIndex < 0) {
+    if(this.contourValues.length > 0) {
+      levelIndex = 0
+    }
+  } else if(levelIndex < this.contourValues.length-1) {
+    var x = levelIndex[i]
+    var y = levelIndex[i+1]
+    if(Math.abs(y-pos[2]) < Math.abs(x-pos[2])) {
+      levelIndex = i + 1
+    }
+  }
+
   return new SurfacePickResult(pos,
     [ fx<0.5 ? ix : (ix+1),
-      fy<0.5 ? iy : (iy+1) ])
+      fy<0.5 ? iy : (iy+1) ],
+    levelIndex)
 }
 
 function padField(field) {
@@ -289,7 +426,10 @@ proto.update = function(params) {
     this.pickId = params.pickId|0
   }
   if('levels' in params) {
-    this.contourValues = params.levels
+    this.contourValues = params.levels.slice()
+    this.contourValues.sort(function(a,b) {
+      return a-b
+    })
   }
   if('lineWidth' in params) {
     this.contourWidth = params.lineWidth
@@ -305,6 +445,15 @@ proto.update = function(params) {
   }
   if('contourColor' in params) {
     this.contourColor = params.contourColor
+  }
+  if('contourProject' in params) {
+    this.contourProject = params.contourProject
+  }
+  if('surfaceProject' in params) {
+    this.surfaceProject = params.surfaceProject
+  }
+  if('axesBounds' in params) {
+    this.axesBounds = params.axesBounds
   }
 
   if(params.field) {
