@@ -120,7 +120,6 @@ proto.draw = function(params) {
   params = params || {}
   var gl = this.gl
   
-
   var uniforms = {
     model:      params.model || IDENTITY,
     view:       params.view || IDENTITY,
@@ -408,7 +407,7 @@ proto.update = function(params) {
           var ix = Math.floor(x)|0
           var fx = x - ix
           var t0 = ticks[0].get(Math.max(ix, 0)|0)
-          var t1 = ticks[0].get(Math.min(ix, nshape[0]-1)|0)
+          var t1 = ticks[0].get(Math.min(ix+1, nshape[0]-1)|0)
           contourVerts.push((1.0-fx)*t0 + fx*t1)
         }
         contourVerts.push(p[0], p[1])

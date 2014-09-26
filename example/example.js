@@ -14,7 +14,7 @@ var mat4 = glm.mat4
 
 var surface, spikes, axes, select, target = null
 
-var size = 256
+var size = 128
 
 shell.on("gl-init", function() {
   var gl = shell.gl
