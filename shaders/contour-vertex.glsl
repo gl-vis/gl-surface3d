@@ -2,6 +2,7 @@ precision mediump float;
 
 attribute vec4 uv;
 
+uniform mat3 permutation;
 uniform mat4 model, view, projection;
 uniform float height, zOffset;
 
@@ -11,7 +12,8 @@ varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
 
 void main() {
-  vec4 worldPosition = model * vec4(uv.xy, height, 1.0);
+  vec3 dataCoordinate = permutation * vec3(uv.xy, height);
+  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);
 
   vec4 clipPosition = projection * view * worldPosition;
   clipPosition.z = clipPosition.z + zOffset;
@@ -19,6 +21,6 @@ void main() {
   gl_Position = clipPosition;
   value = height;
   kill = -1.0;
-  worldCoordinate = vec3(uv.xy, height);
+  worldCoordinate = dataCoordinate;
   planeCoordinate = uv.zw;
 }

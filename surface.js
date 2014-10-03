@@ -2,6 +2,8 @@
 
 module.exports = createSurfacePlot
 
+var dup           = require('dup')
+var bits          = require('bit-twiddle')
 var glslify       = require('glslify')
 var createBuffer  = require('gl-buffer')
 var createVAO     = require('gl-vao')
@@ -48,10 +50,28 @@ var QUAD = [
   [0, 1]
 ]
 
-function SurfacePickResult(position, index, level) {
+var PERMUTATIONS = [
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,0,0]
+]
+
+;(function() {
+  for(var i=0; i<3; ++i) {
+    var p = PERMUTATIONS[i]
+    var u = (i+1) % 3
+    var v = (i+2) % 3
+    p[u + 0] = 1
+    p[v + 3] = 1
+    p[i + 6] = 1
+  }
+})()
+
+function SurfacePickResult(position, index, uv, level) {
   this.position     = position
   this.index        = index
-  this.level = level
+  this.uv           = uv
+  this.level        = level
 }
 
 function genColormap(name) {
@@ -87,46 +107,63 @@ function SurfacePlot(
   contourShader,
   contourPickShader,
   contourBuffer,
-  contourVAO) {
+  contourVAO,
+  dynamicBuffer,
+  dynamicVAO) {
 
-  this.gl = gl
-  this.shape = shape
-  this.bounds = bounds
+  this.gl                 = gl
+  this.shape              = shape
+  this.bounds             = bounds
 
-  this._shader = shader
-  this._pickShader = pickShader
-  this._coordinateBuffer = coordinates
-  this._valueBuffer = values
-  this._vao = vao
-  this._colorMap = colorMap
+  this._shader            = shader
+  this._pickShader        = pickShader
+  this._coordinateBuffer  = coordinates
+  this._valueBuffer       = values
+  this._vao               = vao
+  this._colorMap          = colorMap
 
   this._contourShader     = contourShader
   this._contourPickShader = contourPickShader
   this._contourBuffer     = contourBuffer
   this._contourVAO        = contourVAO
-  this._contourOffsets    = []
-  this._contourCounts     = []
+  this._contourOffsets    = [[], [], []]
+  this._contourCounts     = [[], [], []]
   this._vertexCount       = 0
 
-  this.contourWidth       = 1
-  this.contourValues      = []
+  this._dynamicBuffer     = dynamicBuffer
+  this._dynamicVAO        = dynamicVAO
+  this._dynamicOffsets    = [0,0,0]
+  this._dynamicCounts     = [0,0,0]
+
+  this.contourWidth       = [ 1, 1, 1 ]
+  this.contourLevels      = [[], [], []]
+  this.contourTint        = [0, 0, 0]
+  this.contourColor       = [[0.5,0.5,0.5,1], [0.5,0.5,0.5,1], [0.5,0.5,0.5,1]]
+
   this.showContour        = true
   this.showSurface        = true
 
-  this.contourTint        = 0
-  this.contourColor       = [0.5,0.5,0.5,1]
-  this.highlightColor     = [0,0,0,1]
-  this.highlightLevel     = -1
+  this.highlightColor     = [[0,0,0,1], [0,0,0,1], [0,0,0,1]]
+  this.highlightTint      = [ 1, 1, 1 ]
+  this.highlightLevel     = [-1, -1, -1]
+
+  //Dynamic contour options
+  this.dynamicLevel       = [ NaN, NaN, NaN ]
+  this.dynamicColor       = [ [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1] ]
+  this.dynamicTint        = [ 1, 1, 1 ]
 
   this.axesBounds         = [[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]]
   this.surfaceProject     = [ false, false, false ]
   this.contourProject     = [ false, false, false ]
 
   //Store xyz field now
-  this._field = [ ndarray(pool.mallocFloat(1024), [0,0]), ndarray(pool.mallocFloat(1024), [0,0]), ndarray(pool.mallocFloat(1024), [0,0]) ]
+  this._field             = [ 
+      ndarray(pool.mallocFloat(1024), [0,0]), 
+      ndarray(pool.mallocFloat(1024), [0,0]), 
+      ndarray(pool.mallocFloat(1024), [0,0]) ]
 
-  this.pickId = 1
-  this.clipBounds = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
+  this.pickId             = 1
+  this.clipBounds         = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
 }
 
 var proto = SurfacePlot.prototype
@@ -157,7 +194,7 @@ function computeProjectionData(camera, obj) {
       multiply(axisSquish, camera.model, axisSquish)
       projections[i] = axisSquish
 
-      var nclipBounds = [obj.clipBounds[0].slice(), obj.clipBounds[1].slice()]
+      var nclipBounds = [camera.clipBounds[0].slice(), camera.clipBounds[1].slice()]
       nclipBounds[0][i] = -1e8
       nclipBounds[1][i] = 1e8
       clipRects[i] = nclipBounds
@@ -186,8 +223,9 @@ proto.draw = function(params) {
     clipBounds: this.clipBounds.map(clampVec),
     height:     0.0,
     contourTint:  0,
-    zOffset:      0,
-    contourColor: this.contourColor
+    contourColor: this.contourColor[0],
+    permutation: [1,0,0,0,1,0,0,0,1],
+    zOffset:     -1e-3
   }
 
   var projectData = computeProjectionData(uniforms, this)
@@ -220,24 +258,30 @@ proto.draw = function(params) {
   if(projectData.showContour) {
     var shader = this._contourShader
 
-    gl.lineWidth(this.contourWidth)
-
-    uniforms.zOffset = -1e-3
-    uniforms.contourTint = this.contourTint
-
     shader.bind()
     shader.uniforms = uniforms
 
+    //Draw contour lines
     var vao = this._contourVAO
     vao.bind()
-    for(var j=0; j<this.contourValues.length; ++j) {
-      if(j === this.highlightLevel) {
-        shader.uniforms.contourColor = this.highlightColor
-      } else {
-        shader.uniforms.contourColor = this.contourColor
+
+    //Draw contour levels
+    for(var i=0; i<3; ++i) {
+      shader.uniforms.permutation = PERMUTATIONS[i]
+      gl.lineWidth(this.contourWidth[i])
+
+      for(var j=0; j<this.contourLevels[i].length; ++j) {
+        if(j === this.highlightLevel[i]) {
+          shader.uniforms.contourColor = this.highlightColor[i]
+          shader.uniforms.contourTint  = this.highlightTint[i]
+
+        } else if(j === 0 || (j-1) === this.highlightLevel[i]) {
+          shader.uniforms.contourColor = this.contourColor[i]
+          shader.uniforms.contourTint  = this.contourTint[i]
+        }
+        shader.uniforms.height = this.contourLevels[i][j]
+        vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
       }
-      shader.uniforms.height = this.contourValues[j]
-      vao.draw(gl.LINES, this._contourCounts[j], this._contourOffsets[j])
     }
 
     //Draw projections of surface
@@ -245,21 +289,27 @@ proto.draw = function(params) {
       if(!this.contourProject[i]) {
         continue
       }
-      shader.uniforms.model = projectData.projections[i]
+      shader.uniforms.model      = projectData.projections[i]
       shader.uniforms.clipBounds = projectData.clipBounds[i]
-
-      for(var j=0; j<this.contourValues.length; ++j) {
-        if(j === this.highlightLevel) {
-          shader.uniforms.contourColor = this.highlightColor
-        } else {
-          shader.uniforms.contourColor = this.contourColor
+      for(var j=0; j<3; ++j) {
+        shader.uniforms.permutation = PERMUTATIONS[j]
+        gl.lineWidth(this.contourWidth[j])
+        for(var k=0; k<this.contourLevels[j].length; ++k) {
+          if(k === this.highlightLevel[j]) {
+            shader.uniforms.contourColor  = this.highlightColor[j]
+            shader.uniforms.contourTint   = this.highlightTint[j]
+          } else if(k === 0 || (k-1) === this.highlightLevel[j]) {
+            shader.uniforms.contourColor  = this.contourColor[j]
+            shader.uniforms.contourTint   = this.contourTint[j]
+          }
+          shader.uniforms.height = this.contourLevels[j][k]
+          vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
         }
-        shader.uniforms.height = this.contourValues[j]
-        vao.draw(gl.LINES, this._contourCounts[j], this._contourOffsets[j])
       }
     }
-
     vao.unbind()
+
+    //Draw dynamic contours
   }
 }
 
@@ -277,7 +327,8 @@ proto.drawPick = function(params) {
     pickId:       this.pickId/255.0,
     lowerBound:   this.bounds[0],
     upperBound:   this.bounds[1],
-    zOffset:      0.0
+    zOffset:      0.0,
+    permutation: [1,0,0,0,1,0,0,0,1]
   }
 
   var projectData = computeProjectionData(uniforms, this)
@@ -307,17 +358,19 @@ proto.drawPick = function(params) {
   if(projectData.showContour) {
     var shader = this._contourPickShader
 
-    gl.lineWidth(this.contourWidth)
-
     shader.bind()
     shader.uniforms = uniforms
 
     var vao = this._contourVAO
     vao.bind()
 
-    for(var i=0; i<this.contourValues.length; ++i) {
-      shader.uniforms.height = this.contourValues[i]
-      vao.draw(gl.LINES, this._contourCounts[i], this._contourOffsets[i])
+    for(var j=0; j<3; ++j) {
+      gl.lineWidth(this.contourWidth[j])
+      shader.uniforms.permutation = PERMUTATIONS[j]
+      for(var i=0; i<this.contourLevels[j].length; ++i) {
+        shader.uniforms.height = this.contourLevels[j][i]
+        vao.draw(gl.LINES, this._contourCounts[j][i], this._contourOffsets[j][i])
+      }
     }
 
     //Draw projections of surface
@@ -325,12 +378,16 @@ proto.drawPick = function(params) {
       if(!this.contourProject[i]) {
         continue
       }
-      shader.uniforms.model = projectData.projections[i]
+      shader.uniforms.model      = projectData.projections[i]
       shader.uniforms.clipBounds = projectData.clipBounds[i]
-
-      for(var j=0; j<this.contourValues.length; ++j) {
-        shader.uniforms.height = this.contourValues[j]
-        vao.draw(gl.LINES, this._contourCounts[j], this._contourOffsets[j])
+      
+      for(var j=0; j<3; ++j) {
+        shader.uniforms.permutation = PERMUTATIONS[j]
+        gl.lineWidth(this.contourWidth[j])
+        for(var k=0; k<this.contourLevels[j].length; ++k) {
+          shader.uniforms.height = this.contourLevels[j][k]
+          vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
+        }
       }
     }
 
@@ -349,6 +406,7 @@ proto.pick = function(selection) {
 
   var shape = this._field[2].shape.slice()
 
+  //Compute uv coordinate
   var x = shape[0] * (selection.value[0] + (selection.value[2]>>4)/16.0)/255.0
   var ix = Math.floor(x)
   var fx = x - ix
@@ -357,14 +415,18 @@ proto.pick = function(selection) {
   var iy = Math.floor(y)
   var fy = y - iy
 
+  ix += 1
+  iy += 1
+
+  //Compute xyz coordinate
   var pos = [0,0,0]
   for(var dx=0; dx<2; ++dx) {
     var s = dx ? fx : 1.0 - fx
     for(var dy=0; dy<2; ++dy) {
       var t = dy ? fy : 1.0 - fy
 
-      var r = Math.min(ix + dx, shape[0]-1)
-      var c = Math.min(iy + dy, shape[1]-1)
+      var r = ix + dx
+      var c = iy + dy
       var w = s * t
 
       for(var i=0; i<3; ++i) {
@@ -374,49 +436,70 @@ proto.pick = function(selection) {
   }
 
   //Find closest level
-  var levelIndex = bsearch.le(this.contourValues, pos[2])
-  if(levelIndex < 0) {
-    if(this.contourValues.length > 0) {
-      levelIndex = 0
-    }
-  } else if(levelIndex < this.contourValues.length-1) {
-    var x = levelIndex[i]
-    var y = levelIndex[i+1]
-    if(Math.abs(y-pos[2]) < Math.abs(x-pos[2])) {
-      levelIndex = i + 1
+  var levelIndex = [-1,-1,-1]
+  for(var j=0; j<3; ++j) {
+    levelIndex[j] = bsearch.le(this.contourLevels[j], pos[j])
+    if(levelIndex[j] < 0) {
+      if(this.contourLevels[j].length > 0) {
+        levelIndex[j] = 0
+      }
+    } else if(levelIndex[j] < this.contourLevels[j].length-1) {
+      var a = this.contourLevels[j][levelIndex[j]]
+      var b = this.contourLevels[j][levelIndex[j]+1]
+      if(Math.abs(a-pos[j]) > Math.abs(b-pos[j])) {
+        levelIndex[j] += 1
+      }
     }
   }
 
-  return new SurfacePickResult(pos,
+  //Retrun resulting pick point
+  return new SurfacePickResult(
+    pos,
     [ fx<0.5 ? ix : (ix+1),
       fy<0.5 ? iy : (iy+1) ],
+    [ x/shape[0], y/shape[1] ],
     levelIndex)
 }
 
-function padField(field) {
-  var nshape = [ field.shape[0]+2, field.shape[1]+2 ]
-  var ndata  = pool.mallocFloat(nshape[0]*nshape[1])
-  var nfield = ndarray(ndata, nshape)
+function padField(nfield, field) {
+
+  var shape = field.shape.slice()
+  var nshape = nfield.shape.slice()
 
   //Center
-  ops.assign(nfield.lo(1,1).hi(field.shape[0], field.shape[1]), field)
+  ops.assign(nfield.lo(1,1).hi(shape[0], shape[1]), field)
 
   //Edges
-  ops.assign(nfield.lo(1).hi(field.shape[0], 1), 
-              field.hi(field.shape[0], 1))
-  ops.assign(nfield.lo(1,nshape[1]-1).hi(field.shape[0],1),
-              field.lo(0,field.shape[1]-1).hi(field.shape[0],1))
-  ops.assign(nfield.lo(0,1).hi(1,field.shape[1]),
+  ops.assign(nfield.lo(1).hi(shape[0], 1), 
+              field.hi(shape[0], 1))
+  ops.assign(nfield.lo(1,nshape[1]-1).hi(shape[0],1),
+              field.lo(0,shape[1]-1).hi(shape[0],1))
+  ops.assign(nfield.lo(0,1).hi(1,shape[1]),
               field.hi(1))
-  ops.assign(nfield.lo(nshape[0]-1,1).hi(1,field.shape[1]),
-              field.lo(field.shape[0]-1))
+  ops.assign(nfield.lo(nshape[0]-1,1).hi(1,shape[1]),
+              field.lo(shape[0]-1))
   //Corners
   nfield.set(0,0, field.get(0,0))
-  nfield.set(0,nshape[1]-1, field.get(0,field.shape[1]-1))
-  nfield.set(nshape[0]-1,0, field.get(field.shape[0]-1,0))
-  nfield.set(nshape[0]-1,nshape[1]-1, field.get(field.shape[0]-1,field.shape[1]-1))
+  nfield.set(0,nshape[1]-1, field.get(0,shape[1]-1))
+  nfield.set(nshape[0]-1,0, field.get(shape[0]-1,0))
+  nfield.set(nshape[0]-1,nshape[1]-1, field.get(shape[0]-1,shape[1]-1))
+}
 
-  return nfield
+function handleArray(param, ctor) {
+  if(Array.isArray(param)) {
+    return [ ctor(param[0]), ctor(param[1]), ctor(param[2]) ]
+  }
+  return [ ctor(param), ctor(param), ctor(param) ]
+}
+
+function toColor(x) {
+  if(Array.isArray(x)) {
+    if(x.length === 3) {
+      return [x[0], x[1], x[2], 1]
+    }
+    return [x[0], x[1], x[2], x[3]]
+  }
+  return [0,0,0,1]
 }
 
 proto.update = function(params) {
@@ -426,28 +509,44 @@ proto.update = function(params) {
     this.pickId = params.pickId|0
   }
   if('levels' in params) {
-    this.contourValues = params.levels.slice()
-    this.contourValues.sort(function(a,b) {
-      return a-b
-    })
+    var levels = params.levels
+    if(!Array.isArray(levels[0])) {
+      this.contourLevels = [ [], [], levels ]
+    } else {
+      this.contourLevels = levels.slice()
+    }
+    for(var i=0; i<3; ++i) {
+      this.contourLevels[i] = this.contourLevels[i].slice()
+      this.contourLevels.sort(function(a,b) {
+        return a-b
+      })
+    }
   }
-  if('lineWidth' in params) {
-    this.contourWidth = params.lineWidth
+  if('contourWidth' in params) {
+    this.contourWidth = handleArray(params.contourWidth, Number)
   }
   if('showContour' in params) {
-    this.showContour = !!params.showContour
+    this.showContour = handleArray(params.showContour, Boolean)
   }
   if('showSurface' in params) {
     this.showSurface = !!params.showSurface
   }
   if('contourTint' in params) {
-    this.contourTint = +params.contourTint
+    this.contourTint = handleArray(params.contourTint, Boolean)
   }
   if('contourColor' in params) {
-    this.contourColor = params.contourColor
+    if(Array.isArray(params.contourColor)) {
+      if(Array.isArray(params.contourColor[0])) {
+        this.contourColor = [ toColor(params.contourColor[0]), 
+                              toColor(params.contourColor[1]),
+                              toColor(params.contourColor[2]) ]
+      } else {
+        this.contourColor = [ toColor(params.contourColor), toColor(params.contourColor), toColor(params.contourColor) ]
+      }
+    }
   }
   if('contourProject' in params) {
-    this.contourProject = params.contourProject
+    this.contourProject = handleArray(params.contourProject, Boolean)
   }
   if('surfaceProject' in params) {
     this.surfaceProject = params.surfaceProject
@@ -455,20 +554,29 @@ proto.update = function(params) {
   if('axesBounds' in params) {
     this.axesBounds = params.axesBounds
   }
-
-  if(params.field) {
-    var field = params.field
-    if(field.size > this._field[2].data.length) {
-      pool.freeFloat(this._field[2].data)
-      this._field[2].data = pool.mallocFloat(field.size)
-    }
-    this._field[2] = ndarray(this._field[2].data, field.shape)
-    ops.assign(this._field[2], field)
+  if(!params.field) {
+    throw new Error('must specify field parameter')
   }
 
+  //
+  var field = params.field
+  var fsize = (field.shape[0]+2)*(field.shape[1]+2)
+
+  //Resize if necessary
+  if(fsize > this._field[2].data.length) {
+    pool.freeFloat(this._field[2].data)
+    this._field[2].data = pool.mallocFloat(bits.nextPow2(fsize))
+  }
+
+  //Pad field
+  this._field[2] = ndarray(this._field[2].data, [field.shape[0]+2, field.shape[1]+2])
+  padField(this._field[2], field)
+
   //Save shape of field
-  var shape = this._field[2].shape.slice()
-  this.shape = shape
+  this.shape = field.shape.slice()
+
+  //Save shape
+  var shape = this.shape
 
   //Resize coordinate fields if necessary
   for(var i=0; i<2; ++i) {
@@ -492,7 +600,7 @@ proto.update = function(params) {
           throw new Error('gl-surface: coords have incorrect shape')
         }
       }
-      ops.assign(this._field[i], coord)
+      padField(this._field[i], coord)
     }
   } else if(params.ticks) {
     var ticks = params.ticks
@@ -513,14 +621,19 @@ proto.update = function(params) {
       tick2.stride[i^1] = 0
 
       //Fill in field array
-      ops.assign(this._field[i], tick2)
+      padField(this._field[i], tick2)
     }    
   } else {
+    for(var i=0; i<2; ++i) {
+      var offset = [0,0]
+      offset[i] = 1
+      this._field[i] = ndarray(this._field[i].data, shape, offset, 0)
+    }
     for(var j=0; j<shape[0]; ++j) {
-      for(var i=0; i<shape[1]; ++i) {
-        this._field[0].set(i,j,j)
-        this._field[1].set(i,j,i)
-      }
+      this._field[0].set(j,0,j)
+    }
+    for(var j=0; j<shape[1]; ++j) {
+      this._field[1].set(0,j,j)
     }
   }
 
@@ -543,7 +656,7 @@ j_loop:
       for(var dx=0; dx<2; ++dx) {
         for(var dy=0; dy<2; ++dy) {
           for(var k=0; k<3; ++k) {
-            var f = this._field[k].get(i+dx, j+dy)
+            var f = this._field[k].get(1+i+dx, 1+j+dy)
             if(isNaN(f) || !isFinite(f)) {
               continue j_loop
             }
@@ -554,9 +667,9 @@ j_loop:
         var r = i + QUAD[k][0]
         var c = j + QUAD[k][1]
 
-        var tx = this._field[0].get(r, c)
-        var ty = this._field[1].get(r, c)
-        var f  = this._field[2].get(r, c)
+        var tx = this._field[0].get(r+1, c+1)
+        var ty = this._field[1].get(r+1, c+1)
+        var f  = this._field[2].get(r+1, c+1)
 
         tverts[tptr++] = r
         tverts[tptr++] = c
@@ -587,81 +700,81 @@ j_loop:
   this.bounds = [lo, hi]
 
   //Update contour lines
-  var levels = this.contourValues
   var contourVerts = []
-  var levelOffsets = []
-  var levelCounts  = []
 
-  var parts = [0,0]
-  var graphParts = [0,0]
+  for(var dim=0; dim<3; ++dim) {
+    var levels = this.contourLevels[dim]
+    var levelOffsets = []
+    var levelCounts  = []
 
-  var padded = padField(this._field[2])
+    var parts = [0,0]
+    var graphParts = [0,0]
 
-  for(var i=0; i<levels.length; ++i) {
-    var graph = surfaceNets(padded, levels[i])
-    levelOffsets.push((contourVerts.length/4)|0)
-    var vertexCount = 0
+    for(var i=0; i<levels.length; ++i) {
+      var graph = surfaceNets(this._field[dim], levels[i])
+      levelOffsets.push((contourVerts.length/4)|0)
+      var vertexCount = 0
 
 edge_loop:
-    for(var j=0; j<graph.cells.length; ++j) {
-      var e = graph.cells[j]
-      for(var k=0; k<2; ++k) {
-        var p = graph.positions[e[k]]
+      for(var j=0; j<graph.cells.length; ++j) {
+        var e = graph.cells[j]
+        for(var k=0; k<2; ++k) {
+          var p = graph.positions[e[k]]
 
-        var x = p[0]-1
-        var ix = Math.floor(x)|0
-        var fx = x - ix
+          var x = p[0]
+          var ix = Math.floor(x)|0
+          var fx = x - ix
 
-        var y = p[1]-1
-        var iy = Math.floor(y)|0
-        var fy = y - iy
+          var y = p[1]
+          var iy = Math.floor(y)|0
+          var fy = y - iy
 
-        
-        var hole = false
+          var hole = false
 dd_loop:
-        for(var dd=0; dd<2; ++dd) {
-          parts[dd] = 0.0
-          for(var dx=0; dx<2; ++dx) {
-            var s = dx ? fx : 1.0 - fx
-            var r = Math.min(Math.max(ix+dx, 0), shape[0]-1)|0
-            for(var dy=0; dy<2; ++dy) {
-              var t = dy ? fy : 1.0 - fy
-              var c = Math.min(Math.max(iy+dy, 0), shape[1]-1)|0
+          for(var dd=0; dd<2; ++dd) {
+            parts[dd] = 0.0
+            var iu = (dim + dd + 1) % 3            
+            for(var dx=0; dx<2; ++dx) {
+              var s = dx ? fx : 1.0 - fx
+              var r = Math.min(Math.max(ix+dx, 0), shape[0])|0
+              for(var dy=0; dy<2; ++dy) {
+                var t = dy ? fy : 1.0 - fy
+                var c = Math.min(Math.max(iy+dy, 0), shape[1])|0
 
-              var f = this._field[dd].get(r,c)
-              if(!isFinite(f) || isNaN(f)) {
-                hole = true
-                break dd_loop
+                var f = this._field[iu].get(r,c)
+                if(!isFinite(f) || isNaN(f)) {
+                  hole = true
+                  break dd_loop
+                }
+
+                var w = s * t
+                parts[dd] += w * f
               }
-
-              var w = s * t
-              parts[dd] += w * this._field[dd].get(r, c)
             }
           }
-        }
 
-        if(!hole) {
-          contourVerts.push(parts[0], parts[1], p[0], p[1])
-          vertexCount += 1
-        } else {
-          if(k > 0) {
-            //If we already added first edge, pop off verts
-            for(var l=0; l<4; ++l) {
-              contourVerts.pop()
+          if(!hole) {
+            contourVerts.push(parts[0], parts[1], p[0], p[1])
+            vertexCount += 1
+          } else {
+            if(k > 0) {
+              //If we already added first edge, pop off verts
+              for(var l=0; l<4; ++l) {
+                contourVerts.pop()
+              }
+              vertexCount -= 1
             }
-            vertexCount -= 1
+            continue edge_loop
           }
-          continue edge_loop
         }
       }
+      levelCounts.push(vertexCount)
     }
-    levelCounts.push(vertexCount)
+
+    //Store results
+    this._contourOffsets[dim]  = levelOffsets
+    this._contourCounts[dim]   = levelCounts
   }
-
-  pool.freeFloat(padded.data)
-
-  this._contourOffsets  = levelOffsets
-  this._contourCounts   = levelCounts
 
   var floatBuffer = pool.mallocFloat(contourVerts.length)
   for(var i=0; i<contourVerts.length; ++i) {
@@ -672,8 +785,8 @@ dd_loop:
 
   if(typeof params.colormap === "string") {
     this._colorMap.setPixels(genColormap(params.colormap))
-  } else {
-    //TODO: Support for colormap arrays
+  } else if(Array.isArray(params.colormap)) {
+    //Set colormap
   }
 }
 
@@ -687,6 +800,8 @@ proto.dispose = function() {
   this._contourVAO.dispose()
   this._contourShader.dispose()
   this._contourPickShader.dispose()
+  this._dynamicBuffer.dispose()
+  this._dynamicVAO.dispose()
   for(var i=0; i<3; ++i) {
     pool.freeFloat(this._field[i].data)
   }
@@ -727,6 +842,13 @@ function createSurfacePlot(gl, field, params) {
       size: 4
     }])
 
+  var dynamicBuffer = createBuffer(gl)
+  var dynamicVAO = createVAO(gl, [
+    {
+      buffer: dynamicBuffer,
+      size: 4
+    }])
+
   var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
   cmap.minFilter = gl.LINEAR
   cmap.magFilter = gl.LINEAR
@@ -744,7 +866,9 @@ function createSurfacePlot(gl, field, params) {
     contourShader,
     contourPickShader,
     contourBuffer,
-    contourVAO)
+    contourVAO,
+    dynamicBuffer,
+    dynamicVAO)
 
   var nparams = {}
   for(var id in params) {
