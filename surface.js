@@ -856,6 +856,11 @@ proto.dispose = function() {
 }
 
 proto.dynamic = function(levels) {
+  if(!levels) {
+    this._dynamicCounts = [0,0,0]
+    return
+  }
+
   var vertexCount = 0
   var shape = this.shape
   var scratchBuffer = pool.mallocFloat(12 * shape[0] * shape[1]) 

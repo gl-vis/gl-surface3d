@@ -81,10 +81,13 @@ Updates the surface.  The parameter object may contain any of the following prop
 * `ticks` is a pair of arrays of ticks representing the spacing of the points for the axes of the surface
 * `showSurface` if set, draw the surface
 * `showContour` if set, draw contour lines
-* `lineWidth` the width fo the contour lines
+* `contourWidth` the width fo the contour lines
 * `contourTint` the amount of tint of the contour lines
 * `contourColor` the color of the contour line tint
-* `levels` an array representing the level of the isolines.
+* `levels` an array of arrays representing the level of the isolines.
+* `dynamicWidth` the width of the dynamic isolines
+* `dynamicColors` the color of the dynamic isolines
+* `dynamicTint` the tint of the dynamic isolines
 
 ### `surface.draw([params])`
 Draws the surface.  Accepts the following parameters
@@ -106,6 +109,13 @@ Test if the given selection is contained in the surface.  If true, returns an ob
 
 * `position` which is the position of the selected point on the surface
 * `index` a vector encoding the [x,y] index of the closest data point
+* `uv` the uv coordinate of the selection
+* `levels` the closest levels to the selection
+
+### `surface.dynamic(levels)`
+Dynamically draws level lines.  Set to null/NaN to clear levels.
+
+* `levels` is an array of 3 arrays representing the x/y/z levels to draw
 
 ### `surface.bounds`
 A pair of 3D arrays representing the lower/upper bounding box for the surface plot.
