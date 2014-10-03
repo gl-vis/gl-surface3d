@@ -113,7 +113,7 @@ shell.on("gl-render", function() {
     spikes.position = target.position
     spikes.draw(cameraParams)
     surface.highlightLevel = target.level
-    surface.setDynamic(target.position)
+    surface.dynamic(target.position)
   } else {
     surface.highlightLevel = -1
   }
