@@ -149,8 +149,9 @@ function SurfacePlot(
 
   //Dynamic contour options
   this.dynamicLevel       = [ NaN, NaN, NaN ]
-  this.dynamicColor       = [ [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1] ]
+  this.dynamicColor       = [ [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1] ]
   this.dynamicTint        = [ 1, 1, 1 ]
+  this.dynamicWidth       = [ 1, 1, 1 ]
 
   this.axesBounds         = [[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]]
   this.surfaceProject     = [ false, false, false ]
@@ -307,9 +308,39 @@ proto.draw = function(params) {
         }
       }
     }
-    vao.unbind()
-
+    
     //Draw dynamic contours
+    vao = this._dynamicVAO
+    vao.bind()
+
+    //Draw contour levels
+    for(var i=0; i<3; ++i) {
+      if(this._dynamicCounts[i] === 0) {
+        continue
+      }
+
+      shader.uniforms.model       = uniforms.model
+      shader.uniforms.clipBounds  = uniforms.clipBounds
+      shader.uniforms.permutation = PERMUTATIONS[i]
+      gl.lineWidth(this.dynamicWidth[i])
+
+      shader.uniforms.contourColor = this.dynamicColor[i]
+      shader.uniforms.contourTint  = this.dynamicTint[i]
+      shader.uniforms.height       = this.dynamicLevel[i]
+      vao.draw(gl.LINES, this._dynamicCounts[i], this._dynamicOffsets[i])
+
+      for(var j=0; j<3; ++j) {
+        if(!this.contourProject[j]) {
+          continue
+        }
+
+        shader.uniforms.model      = projectData.projections[j]
+        shader.uniforms.clipBounds = projectData.clipBounds[j]
+        vao.draw(gl.LINES, this._dynamicCounts[i], this._dynamicOffsets[i])
+      }
+    }
+
+    vao.unbind()
   }
 }
 
@@ -502,6 +533,22 @@ function toColor(x) {
   return [0,0,0,1]
 }
 
+function handleColor(param) {
+  if(Array.isArray(param)) {
+    if(Array.isArray(param)) {
+      return [  toColor(param[0]), 
+                toColor(param[1]),
+                toColor(param[2]) ]
+    } else {
+      var c = toColor(param)
+      return [ 
+        c.slice(), 
+        c.slice(), 
+        c.slice() ]
+    }
+  }
+}
+
 proto.update = function(params) {
   params = params || {}
 
@@ -535,15 +582,7 @@ proto.update = function(params) {
     this.contourTint = handleArray(params.contourTint, Boolean)
   }
   if('contourColor' in params) {
-    if(Array.isArray(params.contourColor)) {
-      if(Array.isArray(params.contourColor[0])) {
-        this.contourColor = [ toColor(params.contourColor[0]), 
-                              toColor(params.contourColor[1]),
-                              toColor(params.contourColor[2]) ]
-      } else {
-        this.contourColor = [ toColor(params.contourColor), toColor(params.contourColor), toColor(params.contourColor) ]
-      }
-    }
+    this.contourColor = handleColor(params.contourColor)
   }
   if('contourProject' in params) {
     this.contourProject = handleArray(params.contourProject, Boolean)
@@ -556,6 +595,15 @@ proto.update = function(params) {
   }
   if(!params.field) {
     throw new Error('must specify field parameter')
+  }
+  if('dynamicColor' in params) {
+    this.dynamicColor = handleColor(params.dynamicColor)
+  }
+  if('dynamicTint' in params) {
+    this.dynamicTint = handleArray(params.dynamicTint, Number)
+  }
+  if('dynamicWidth' in params) {
+    this.dynamicWidth = handleArray(params.dynamicWidth, Number)
   }
 
   //
@@ -807,6 +855,77 @@ proto.dispose = function() {
   }
 }
 
+proto.dynamic = function(levels) {
+  var vertexCount = 0
+  var shape = this.shape
+  var scratchBuffer = pool.mallocFloat(12 * shape[0] * shape[1]) 
+  this.dynamicLevel = levels.slice()
+
+  for(var d=0; d<3; ++d) {
+    var u = (d+1) % 3
+    var v = (d+2) % 3
+
+    var f = this._field[d]
+    var g = this._field[u]
+    var h = this._field[v]
+
+    var graph     = surfaceNets(f, levels[d])
+    var edges     = graph.cells
+    var positions = graph.positions
+
+    this._dynamicOffsets[d] = vertexCount
+
+    for(var i=0; i<edges.length; ++i) {
+      var e = edges[i]
+      for(var j=0; j<2; ++j) {
+        var p  = positions[e[j]]
+
+        var x  = +Math.max(Math.min(p[0], shape[0]), 1.0)
+        var ix = x|0
+        var fx = x - ix
+        var hx = 1.0 - fx
+        
+        var y  = +Math.max(Math.min(p[1], shape[1]), 1.0)
+        var iy = y|0
+        var fy = y - iy
+        var hy = 1.0 - fy
+        
+        var w00 = hx * hy
+        var w01 = hx * fy
+        var w10 = fx * hy
+        var w11 = fx * fy
+
+        var cu =  w00 * g.get(ix,  iy) +
+                  w01 * g.get(ix,  iy+1) +
+                  w10 * g.get(ix+1,iy) +
+                  w11 * g.get(ix+1,iy+1)
+
+        var cv =  w00 * h.get(ix,  iy) +
+                  w01 * h.get(ix,  iy+1) +
+                  w10 * h.get(ix+1,iy) +
+                  w11 * h.get(ix+1,iy+1)
+
+        if(isNaN(cu) || isNaN(cv)) {
+          if(j) {
+            vertexCount -= 1
+          }
+          break
+        }
+
+        scratchBuffer[2*vertexCount+0] = cu
+        scratchBuffer[2*vertexCount+1] = cv
+
+        vertexCount += 1
+      }
+    }
+
+    this._dynamicCounts[d] = vertexCount - this._dynamicOffsets[d]
+  }
+
+  this._dynamicBuffer.update(scratchBuffer.subarray(0, 2*vertexCount))
+  pool.freeFloat(scratchBuffer)
+}
+
 function createSurfacePlot(gl, field, params) {
   var shader = createShader(gl)
   shader.attributes.uv.location = 0
@@ -846,7 +965,8 @@ function createSurfacePlot(gl, field, params) {
   var dynamicVAO = createVAO(gl, [
     {
       buffer: dynamicBuffer,
-      size: 4
+      size: 2,
+      type: gl.FLOAT
     }])
 
   var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
