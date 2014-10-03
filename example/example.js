@@ -60,9 +60,10 @@ shell.on("gl-init", function() {
   for(var i=-5; i<=5; ++i) {
     contourLevels.push(20*(i+0.3)/6.0)
   }
+
   
   surface = createSurface(gl, field, {
-    levels: contourLevels,
+    //levels: [contourLevels,contourLevels,contourLevels],
     lineWidth: 3,
     contourTint: 1,
     coords: coords,
@@ -85,11 +86,11 @@ shell.on("gl-init", function() {
     bounds: axes.bounds
   })
 
-  select = createSelect(gl, [shell.height, shell.width])
+  select = createSelect(gl, [shell.width, shell.height])
 })
 
 function drawPick(cameraParams) {
-  select.shape = [shell.height, shell.width]
+  select.shape = [shell.width, shell.height]
   select.begin(shell.mouse[0], shell.mouse[1], 30)
   surface.drawPick(cameraParams)
   target = surface.pick(select.end())
@@ -112,6 +113,7 @@ shell.on("gl-render", function() {
     spikes.position = target.position
     spikes.draw(cameraParams)
     surface.highlightLevel = target.level
+    surface.setDynamic(target.position)
   } else {
     surface.highlightLevel = -1
   }
