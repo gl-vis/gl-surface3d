@@ -7,6 +7,7 @@ uniform float pickId;
 varying float value, kill;
 varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
+varying vec3 surfaceNormal;
 
 vec2 splitFloat(float v) {
   float vh = 255.0 * v;

@@ -16,7 +16,11 @@ var ndarray       = require('ndarray')
 var surfaceNets   = require('surface-nets')
 var getCubeProps  = require('gl-axes/lib/cube')
 var multiply      = require('gl-mat4/multiply')
+var invert        = require('gl-mat4/invert')
 var bsearch       = require('binary-search-bounds')
+var gradient      = require('ndarray-gradient')
+
+var SURFACE_VERTEX_SIZE = 4 * (4 + 2 + 3)
 
 var createShader = glslify({
     vertex:   './shaders/vertex.glsl',
@@ -101,7 +105,6 @@ function SurfacePlot(
   shader, 
   pickShader, 
   coordinates, 
-  values, 
   vao, 
   colorMap,
   contourShader,
@@ -118,7 +121,6 @@ function SurfacePlot(
   this._shader            = shader
   this._pickShader        = pickShader
   this._coordinateBuffer  = coordinates
-  this._valueBuffer       = values
   this._vao               = vao
   this._colorMap          = colorMap
 
@@ -157,7 +159,7 @@ function SurfacePlot(
   this.surfaceProject     = [ false, false, false ]
   this.contourProject     = [ false, false, false ]
 
-  //Store xyz field now
+  //Store xyz fields, need this for picking
   this._field             = [ 
       ndarray(pool.mallocFloat(1024), [0,0]), 
       ndarray(pool.mallocFloat(1024), [0,0]), 
@@ -165,6 +167,13 @@ function SurfacePlot(
 
   this.pickId             = 1
   this.clipBounds         = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
+  this.lightPosition      = [10, 10000, 0]
+
+  this.ambientLight       = 0.8
+  this.diffuseLight       = 0.8
+  this.specularLight      = 2.0
+  this.roughness          = 0.5
+  this.fresnel            = 1.5
 }
 
 var proto = SurfacePlot.prototype
@@ -226,8 +235,42 @@ proto.draw = function(params) {
     contourTint:  0,
     contourColor: this.contourColor[0],
     permutation: [1,0,0,0,1,0,0,0,1],
-    zOffset:     -1e-3
+    zOffset:     -1e-3,
+    kambient:   this.ambientLight,
+    kdiffuse:   this.diffuseLight,
+    kspecular:  this.specularLight,
+    lightPosition: [1000,1000,1000],
+    eyePosition: [0,0,0],
+    roughness:    this.roughness,
+    fresnel:      this.fresnel
   }
+
+  //Compute camera matrix inverse
+  var invCameraMatrix = IDENTITY.slice()
+  multiply(invCameraMatrix, uniforms.view, uniforms.model)
+  multiply(invCameraMatrix, uniforms.projection, uniforms.view)
+  invert(invCameraMatrix, invCameraMatrix)
+
+
+  for(var i=0; i<3; ++i) {
+    uniforms.eyePosition[i] = invCameraMatrix[12+i] / invCameraMatrix[15]
+  }
+
+  var w = invCameraMatrix[15]
+  for(var i=0; i<3; ++i) {
+    w += this.lightPosition[i] * invCameraMatrix[4*i+3]
+  }
+  for(var i=0; i<3; ++i) {
+    var s = invCameraMatrix[12+i]
+    for(var j=0; j<3; ++j) {
+      s += invCameraMatrix[4*j+i] * this.lightPosition[j]
+    }
+    uniforms.lightPosition[i] = s / w
+  }
+
+  console.log(uniforms.lightPosition)
+
+
 
   var projectData = computeProjectionData(uniforms, this)
 
@@ -258,6 +301,11 @@ proto.draw = function(params) {
 
   if(projectData.showContour) {
     var shader = this._contourShader
+
+    //Don't apply lighting to contours
+    uniforms.kambient = 1.0
+    uniforms.kdiffuse = 0.0
+    uniforms.kspecular = 0.0
 
     shader.bind()
     shader.uniforms = uniforms
@@ -359,7 +407,9 @@ proto.drawPick = function(params) {
     lowerBound:   this.bounds[0],
     upperBound:   this.bounds[1],
     zOffset:      0.0,
-    permutation: [1,0,0,0,1,0,0,0,1]
+    permutation: [1,0,0,0,1,0,0,0,1],
+    lightPosition: [0,0,0],
+    eyePosition: [0,0,0]
   }
 
   var projectData = computeProjectionData(uniforms, this)
@@ -632,7 +682,7 @@ proto.update = function(params) {
       pool.freeFloat(this._field[i].data)
       this._field[i].data = pool.mallocFloat(this._field[2].size)
     }
-    this._field[i] = ndarray(this._field[i].data, shape)
+    this._field[i] = ndarray(this._field[i].data, [shape[0]+2, shape[1]+2])
   }
 
   //Generate x/y coordinates
@@ -687,12 +737,45 @@ proto.update = function(params) {
 
   var fields = this._field
 
+  //Compute surface normals
+  var fieldSize = fields[2].size
+  var dfields = ndarray(pool.mallocFloat(field.size*3*2), [3, shape[0]+2, shape[1]+2, 2])
+  for(var i=0; i<3; ++i) {
+    gradient(dfields.pick(i), fields[i])
+  }
+  var normals = ndarray(pool.mallocFloat(field.size*3), [shape[0]+2, shape[1]+2, 3])
+  for(var i=0; i<shape[0]+2; ++i) {
+    for(var j=0; j<shape[1]+2; ++j) {
+      var dxdu = dfields.get(0, i, j, 0)
+      var dxdv = dfields.get(0, i, j, 1)
+      var dydu = dfields.get(1, i, j, 0)
+      var dydv = dfields.get(1, i, j, 1)
+      var dzdu = dfields.get(2, i, j, 0)
+      var dzdv = dfields.get(2, i, j, 1)
+
+      var nx = dydu * dzdv - dydv * dzdu
+      var ny = dzdu * dxdv - dzdv * dxdu
+      var nz = dxdu * dydv - dxdv * dydu
+
+      var nl = nx*nx + ny * ny + nz * nz
+      if(nl < 1e-6) {
+        nl = 0.0
+      } else {
+        nl = -1.0 / Math.sqrt(nl)
+      }
+
+      normals.set(i,j,0, nx*nl)
+      normals.set(i,j,1, ny*nl)
+      normals.set(i,j,2, nz*nl)
+    }
+  }
+  pool.free(dfields.data)
+
   //Initialize surface
   var lo = [ Infinity, Infinity, Infinity]
   var hi = [-Infinity,-Infinity,-Infinity]
   var count   = (shape[0]-1) * (shape[1]-1) * 6
-  var tverts  = pool.mallocFloat(4*count)
-  var fverts  = pool.mallocFloat(2*count)
+  var tverts  = pool.mallocFloat(9*count)
   var tptr    = 0
   var fptr    = 0
   var vertexCount = 0
@@ -718,13 +801,19 @@ j_loop:
         var tx = this._field[0].get(r+1, c+1)
         var ty = this._field[1].get(r+1, c+1)
         var f  = this._field[2].get(r+1, c+1)
+        var nx = normals.get(r+1, c+1, 0)
+        var ny = normals.get(r+1, c+1, 1)
+        var nz = normals.get(r+1, c+1, 2)
 
         tverts[tptr++] = r
         tverts[tptr++] = c
         tverts[tptr++] = tx
         tverts[tptr++] = ty
-        fverts[fptr++] = f
-        fverts[fptr++] = 0
+        tverts[tptr++] = f
+        tverts[tptr++] = 0
+        tverts[tptr++] = nx
+        tverts[tptr++] = ny
+        tverts[tptr++] = nz
 
         lo[0] = Math.min(lo[0], tx)
         lo[1] = Math.min(lo[1], ty)
@@ -739,11 +828,10 @@ j_loop:
     }
   }
   this._vertexCount = vertexCount
-  this._valueBuffer.update(fverts)
   this._coordinateBuffer.update(tverts)
   pool.freeFloat(tverts)
-  pool.freeFloat(fverts)
-
+  pool.free(normals.data)
+  
   //Update bounds
   this.bounds = [lo, hi]
 
@@ -842,7 +930,6 @@ proto.dispose = function() {
   this._shader.dispose()
   this._vao.dispose()
   this._coordinateBuffer.dispose()
-  this._valueBuffer.dispose()
   this._colorMap.dispose()
   this._contourBuffer.dispose()
   this._contourVAO.dispose()
@@ -885,13 +972,15 @@ proto.dynamic = function(levels) {
       for(var j=0; j<2; ++j) {
         var p  = positions[e[j]]
 
-        var x  = +Math.max(Math.min(p[0], shape[0]), 1.0)
+        var x  = +p[0]
         var ix = x|0
+        var jx = Math.min(ix+1, shape[0])|0
         var fx = x - ix
         var hx = 1.0 - fx
         
-        var y  = +Math.max(Math.min(p[1], shape[1]), 1.0)
+        var y  = +p[1]
         var iy = y|0
+        var jy = Math.min(iy+1, shape[1])|0
         var fy = y - iy
         var hy = 1.0 - fy
         
@@ -900,15 +989,15 @@ proto.dynamic = function(levels) {
         var w10 = fx * hy
         var w11 = fx * fy
 
-        var cu =  w00 * g.get(ix,  iy) +
-                  w01 * g.get(ix,  iy+1) +
-                  w10 * g.get(ix+1,iy) +
-                  w11 * g.get(ix+1,iy+1)
+        var cu =  w00 * g.get(ix,iy) +
+                  w01 * g.get(ix,jy) +
+                  w10 * g.get(jx,iy) +
+                  w11 * g.get(jx,jy)
 
-        var cv =  w00 * h.get(ix,  iy) +
-                  w01 * h.get(ix,  iy+1) +
-                  w10 * h.get(ix+1,iy) +
-                  w11 * h.get(ix+1,iy+1)
+        var cv =  w00 * h.get(ix,iy) +
+                  w01 * h.get(ix,jy) +
+                  w10 * h.get(jx,iy) +
+                  w11 * h.get(jx,jy)
 
         if(isNaN(cu) || isNaN(cv)) {
           if(j) {
@@ -946,16 +1035,25 @@ function createSurfacePlot(gl, field, params) {
   var contourPickShader = createPickContourShader(gl)
   contourPickShader.attributes.uv.location = 0
 
-  var estimatedSize = (field.shape[0]-1) * (field.shape[1]-1) * 6 * 4
+  var estimatedSize = bits.nextPow2((field.shape[0]-1) * (field.shape[1]-1) * 6)
 
-  var coordinateBuffer = createBuffer(gl, estimatedSize * 4)
-  var valueBuffer = createBuffer(gl, estimatedSize)
+  var coordinateBuffer = createBuffer(gl, estimatedSize * SURFACE_VERTEX_SIZE)
   var vao = createVAO(gl, [
       { buffer: coordinateBuffer,
-        size: 4
+        size: 4,
+        stride: SURFACE_VERTEX_SIZE,
+        offset: 0
       },
-      { buffer: valueBuffer,
-        size: 2
+      { buffer: coordinateBuffer,
+        size: 2,
+        stride: SURFACE_VERTEX_SIZE,
+        offset: 16
+      },
+      {
+        buffer: coordinateBuffer,
+        size: 3,
+        stride: SURFACE_VERTEX_SIZE,
+        offset: 24
       }
     ])
 
@@ -985,7 +1083,6 @@ function createSurfacePlot(gl, field, params) {
     shader,
     pickShader,
     coordinateBuffer, 
-    valueBuffer,
     vao,
     cmap,
     contourShader,
