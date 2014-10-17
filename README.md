@@ -126,5 +126,27 @@ Toggles drawing level isolines and their projections.
 
 * `levels` is an array of 3 arrays representing the x/y/z levels to draw
 
+## Lighting parameters
+
+You can also tweak the lighting parameters for the surface using the following variables
+
+### `surface.lightPosition`
+The position of the light source relative to the viewer in clip coordinates
+
+### `surface.ambientLight`
+The fraction of light which is ambiently lit
+
+### `surface.diffuseLight`
+The amount of diffuse light to apply to the surface
+
+### `surface.specularLight`
+THe amount of speculare light to apply to the surface
+
+### `surface.roughness`
+How rough the surface is  (must be between 0 and 1)
+
+### `surface.fresnel`
+The amount of rim lighting to apply.  Higher values = more intense rim light.
+
 ## License
 MIT License.

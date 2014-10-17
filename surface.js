@@ -167,8 +167,8 @@ function SurfacePlot(
 
   this.pickId             = 1
   this.clipBounds         = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
+  
   this.lightPosition      = [10, 10000, 0]
-
   this.ambientLight       = 0.8
   this.diffuseLight       = 0.8
   this.specularLight      = 2.0
