@@ -23,18 +23,18 @@ shell.on("gl-init", function() {
   //Set up camera
   camera.lookAt(
     [-size, -size, 1.5*size],      //Eye position
-    [0,0,0], //Eye target
+    //[0,0,0], //Eye target
+    [size,size,0], //Eye target
     [0, 0, 1])      //Up direction
 
   //Create field
   var field = ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1])
 
-  /*
   fill(field, function(x,y) {
     return 0.5 * size * diric(10, 5.0*(x-size)/size) * diric(10, 5.0*(y-size)/size)
   })
-  */
-
+  
+  /*
   var coords = [
     ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1]),
     ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1])
@@ -60,13 +60,13 @@ shell.on("gl-init", function() {
   for(var i=-5; i<=5; ++i) {
     contourLevels.push(20*(i+0.3)/6.0)
   }
-
+  */
   
   surface = createSurface(gl, field, {
     //levels: [contourLevels,contourLevels,contourLevels],
     lineWidth: 3,
     contourTint: 1,
-    coords: coords,
+    //coords: coords,
     contourProject: [true, true, true]
     //surfaceProject: [true, true, true]
     //showContour: false
@@ -74,7 +74,9 @@ shell.on("gl-init", function() {
   })
 
   axes = createAxes(gl, {
-    bounds: [[-96,-96,-32],[96,96,32]],
+    //bounds: [[-96,-96,-32],[96,96,32]],
+    
+    bounds: [[0,0,-32],[2*size,2*size,96]],
     tickSpacing: [0.125*size, 0.125*size, 0.125*size],
     textSize: size / 32.0,
     gridColor: [0.8,0.8,0.8],
@@ -116,5 +118,6 @@ shell.on("gl-render", function() {
     surface.dynamic(target.position)
   } else {
     surface.highlightLevel = -1
+    surface.dynamic()
   }
 })

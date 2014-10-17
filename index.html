@@ -28,7 +28,8 @@ shell.on("gl-init", function() {
   //Set up camera
   camera.lookAt(
     [-size, -size, 1.5*size],      //Eye position
-    [0,0,0], //Eye target
+    //[0,0,0], //Eye target
+    [size,size,0], //Eye target
     [0, 0, 1])      //Up direction
 
   //Create field
@@ -65,21 +66,22 @@ shell.on("gl-init", function() {
     contourLevels.push(20*(i+0.3)/6.0)
   }
   */
-
   
   surface = createSurface(gl, field, {
     //levels: [contourLevels,contourLevels,contourLevels],
     lineWidth: 3,
     contourTint: 1,
     //coords: coords,
-    //contourProject: [true, true, true]
+    contourProject: [true, true, true]
     //surfaceProject: [true, true, true]
     //showContour: false
     //showSurface: false
   })
 
   axes = createAxes(gl, {
-    bounds: [[0,0,-32],[2*size,2*size,128]],
+    //bounds: [[-96,-96,-32],[96,96,32]],
+    
+    bounds: [[0,0,-32],[2*size,2*size,96]],
     tickSpacing: [0.125*size, 0.125*size, 0.125*size],
     textSize: size / 32.0,
     gridColor: [0.8,0.8,0.8],
@@ -4554,7 +4556,24 @@ function attachCamera(shell) {
 }
 
 module.exports = attachCamera
-},{"orbit-camera":14}],15:[function(require,module,exports){
+},{"orbit-camera":14}],9:[function(require,module,exports){
+"use strict"
+
+var EPSILON = require("almost-equal").DBL_EPSILON
+
+module.exports = dirichlet
+
+var PI = Math.PI
+var sin = Math.sin
+
+function dirichlet(n, x) {
+  var denom = sin(PI * x / n)
+  if(-EPSILON <= denom && denom <= EPSILON) {
+    return 1.0
+  }
+  return sin(PI * x) / (n * denom)
+}
+},{"almost-equal":15}],16:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 // UTILITY
 var util = require('util');
@@ -8815,24 +8834,7 @@ function wrappedNDArrayCtor(data, shape, stride, offset) {
 
 module.exports = wrappedNDArrayCtor
 })(require("__browserify_Buffer").Buffer)
-},{"iota-array":16,"__browserify_Buffer":15}],9:[function(require,module,exports){
-"use strict"
-
-var EPSILON = require("almost-equal").DBL_EPSILON
-
-module.exports = dirichlet
-
-var PI = Math.PI
-var sin = Math.sin
-
-function dirichlet(n, x) {
-  var denom = sin(PI * x / n)
-  if(-EPSILON <= denom && denom <= EPSILON) {
-    return 1.0
-  }
-  return sin(PI * x) / (n * denom)
-}
-},{"almost-equal":17}],17:[function(require,module,exports){
+},{"iota-array":17,"__browserify_Buffer":16}],15:[function(require,module,exports){
 "use strict"
 
 var abs = Math.abs
@@ -8854,7 +8856,7 @@ almostEqual.DBL_EPSILON = 2.2204460492503131e-16
 
 module.exports = almostEqual
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict"
 
 function iota(n) {
@@ -9712,7 +9714,112 @@ function createAxes(gl, options) {
   return axes
 }
 
-},{"./lib/text.js":24,"./lib/lines.js":25,"./lib/background.js":26,"./lib/cube.js":27,"./lib/ticks.js":28,"gl-state":29}],30:[function(require,module,exports){
+},{"./lib/lines.js":24,"./lib/text.js":25,"./lib/cube.js":26,"./lib/background.js":27,"./lib/ticks.js":28,"gl-state":29}],11:[function(require,module,exports){
+'use strict'
+
+module.exports = createSelectBuffer
+
+var createFBO = require('gl-fbo')
+var pool      = require('typedarray-pool')
+var ndarray   = require('ndarray')
+var selectRange = require('cwise/lib/wrapper')({"args":["array",{"offset":[0,0,1],"array":0},{"offset":[0,0,2],"array":0},{"offset":[0,0,3],"array":0},"scalar","scalar","index"],"pre":{"body":"{this_closestD2=1e8,this_closestX=-1,this_closestY=-1}","args":[],"thisVars":["this_closestD2","this_closestX","this_closestY"],"localVars":[]},"body":{"body":"{if(255>_inline_1_arg0_||255>_inline_1_arg1_||255>_inline_1_arg2_||255>_inline_1_arg3_){var _inline_1_l=_inline_1_arg4_-_inline_1_arg6_[0],_inline_1_a=_inline_1_arg5_-_inline_1_arg6_[1],_inline_1_f=_inline_1_l*_inline_1_l+_inline_1_a*_inline_1_a;_inline_1_f<this_closestD2&&(this_closestD2=_inline_1_f,this_closestX=_inline_1_arg6_[0],this_closestY=_inline_1_arg6_[1])}}","args":[{"name":"_inline_1_arg0_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg1_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg2_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg3_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg4_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg5_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg6_","lvalue":false,"rvalue":true,"count":4}],"thisVars":["this_closestD2","this_closestX","this_closestY"],"localVars":["_inline_1_a","_inline_1_f","_inline_1_l"]},"post":{"body":"{return[this_closestX,this_closestY,this_closestD2]}","args":[],"thisVars":["this_closestD2","this_closestX","this_closestY"],"localVars":[]},"debug":false,"funcName":"cwise","blockSize":64})
+
+function SelectResult(x, y, id, value, distance) {
+  this.coord = [x, y]
+  this.id = id
+  this.value = value
+  this.distance = distance
+}
+
+function SelectBuffer(gl, fbo, buffer) {
+  this.gl     = gl
+  this.fbo    = fbo
+  this.buffer = buffer
+  this.offset = [0,0]
+  this.dims   = [1,1]
+  this.radius = 1.0
+}
+
+var proto = SelectBuffer.prototype
+
+Object.defineProperty(proto, 'shape', {
+  get: function() {
+    return this.fbo.shape.slice()
+  },
+  set: function(v) {
+    this.fbo.shape = v
+    var c = this.fbo.shape[0]
+    var r = this.fbo.shape[1]
+    if(r*c*4 > this.buffer.length) {
+      pool.free(this.buffer)
+      this.buffer = pool.mallocUint8(r*c*4)
+    }
+    return v
+  }
+})
+
+proto.begin = function(x, y, radius) {
+  var gl = this.gl
+  var shape = this.shape
+  x = x|0
+  y = y|0
+  
+  if(typeof radius !== 'number') {
+    radius = 1.0
+  }
+
+  var x0 = Math.min(Math.max(x - radius, 0), shape[0])|0
+  var x1 = Math.min(Math.max(x + radius, 0), shape[0])|0
+  var y0 = Math.min(Math.max(y - radius, 0), shape[1])|0
+  var y1 = Math.min(Math.max(y + radius, 0), shape[1])|0
+
+  this.offset = [x0, y0]
+  this.dims   = [x1-x0, y1-y0]
+  this.target = [x-x0, y-y0]
+  this.radius = radius
+
+  this.fbo.bind()
+  gl.clearColor(1,1,1,1)
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+}
+
+proto.end = function() {
+  var gl = this.gl
+  if(this.dims[0] > 0 && this.dims[1] > 0) {
+    gl.readPixels(this.offset[0], this.shape[1]-this.offset[1]-this.dims[1], this.dims[0], this.dims[1], gl.RGBA, gl.UNSIGNED_BYTE, this.buffer)
+  }
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  if(this.dims[0] <= 0 || this.dims[1] <= 0) {
+    return null
+  }
+  var region = ndarray(this.buffer, [this.dims[0], this.dims[1], 4], [4, this.dims[0]*4, 1])
+  this.region = region
+  var closest = selectRange(region.hi(region.shape[0], region.shape[1], 1), this.target[0], this.target[1])
+  var dx = closest[0]
+  var dy = closest[1]
+  if(dx < 0 || Math.pow(this.radius, 2) < closest[2]) {
+    return null
+  }
+  var c0 = region.get(dx, dy, 0)
+  var c1 = region.get(dx, dy, 1)
+  var c2 = region.get(dx, dy, 2)
+  var c3 = region.get(dx, dy, 3)
+  dx = (dx + this.offset[0])|0
+  dy = (dy + this.offset[1])|0
+  return new SelectResult(dx, dy, c0, [c1, c2, c3], Math.sqrt(closest[2]))
+}
+
+proto.dispose = function() {
+  this.fbo.dispose()
+  pool.free(this.buffer)
+}
+
+function createSelectBuffer(gl, shape) {
+  var fbo = createFBO(gl, shape)
+  var buffer = pool.mallocUint8(shape[0]*shape[1]*4)
+  return new SelectBuffer(gl, fbo, buffer)
+}
+},{"cwise/lib/wrapper":30,"gl-fbo":31,"typedarray-pool":32,"ndarray":7}],33:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -10065,112 +10172,7 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":20}],11:[function(require,module,exports){
-'use strict'
-
-module.exports = createSelectBuffer
-
-var createFBO = require('gl-fbo')
-var pool      = require('typedarray-pool')
-var ndarray   = require('ndarray')
-var selectRange = require('cwise/lib/wrapper')({"args":["array",{"offset":[0,0,1],"array":0},{"offset":[0,0,2],"array":0},{"offset":[0,0,3],"array":0},"scalar","scalar","index"],"pre":{"body":"{this_closestD2=1e8,this_closestX=-1,this_closestY=-1}","args":[],"thisVars":["this_closestD2","this_closestX","this_closestY"],"localVars":[]},"body":{"body":"{if(255>_inline_1_arg0_||255>_inline_1_arg1_||255>_inline_1_arg2_||255>_inline_1_arg3_){var _inline_1_l=_inline_1_arg4_-_inline_1_arg6_[0],_inline_1_a=_inline_1_arg5_-_inline_1_arg6_[1],_inline_1_f=_inline_1_l*_inline_1_l+_inline_1_a*_inline_1_a;_inline_1_f<this_closestD2&&(this_closestD2=_inline_1_f,this_closestX=_inline_1_arg6_[0],this_closestY=_inline_1_arg6_[1])}}","args":[{"name":"_inline_1_arg0_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg1_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg2_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg3_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg4_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg5_","lvalue":false,"rvalue":true,"count":1},{"name":"_inline_1_arg6_","lvalue":false,"rvalue":true,"count":4}],"thisVars":["this_closestD2","this_closestX","this_closestY"],"localVars":["_inline_1_a","_inline_1_f","_inline_1_l"]},"post":{"body":"{return[this_closestX,this_closestY,this_closestD2]}","args":[],"thisVars":["this_closestD2","this_closestX","this_closestY"],"localVars":[]},"debug":false,"funcName":"cwise","blockSize":64})
-
-function SelectResult(x, y, id, value, distance) {
-  this.coord = [x, y]
-  this.id = id
-  this.value = value
-  this.distance = distance
-}
-
-function SelectBuffer(gl, fbo, buffer) {
-  this.gl     = gl
-  this.fbo    = fbo
-  this.buffer = buffer
-  this.offset = [0,0]
-  this.dims   = [1,1]
-  this.radius = 1.0
-}
-
-var proto = SelectBuffer.prototype
-
-Object.defineProperty(proto, 'shape', {
-  get: function() {
-    return this.fbo.shape.slice()
-  },
-  set: function(v) {
-    this.fbo.shape = v
-    var c = this.fbo.shape[0]
-    var r = this.fbo.shape[1]
-    if(r*c*4 > this.buffer.length) {
-      pool.free(this.buffer)
-      this.buffer = pool.mallocUint8(r*c*4)
-    }
-    return v
-  }
-})
-
-proto.begin = function(x, y, radius) {
-  var gl = this.gl
-  var shape = this.shape
-  x = x|0
-  y = y|0
-  
-  if(typeof radius !== 'number') {
-    radius = 1.0
-  }
-
-  var x0 = Math.min(Math.max(x - radius, 0), shape[0])|0
-  var x1 = Math.min(Math.max(x + radius, 0), shape[0])|0
-  var y0 = Math.min(Math.max(y - radius, 0), shape[1])|0
-  var y1 = Math.min(Math.max(y + radius, 0), shape[1])|0
-
-  this.offset = [x0, y0]
-  this.dims   = [x1-x0, y1-y0]
-  this.target = [x-x0, y-y0]
-  this.radius = radius
-
-  this.fbo.bind()
-  gl.clearColor(1,1,1,1)
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-}
-
-proto.end = function() {
-  var gl = this.gl
-  if(this.dims[0] > 0 && this.dims[1] > 0) {
-    gl.readPixels(this.offset[0], this.shape[1]-this.offset[1]-this.dims[1], this.dims[0], this.dims[1], gl.RGBA, gl.UNSIGNED_BYTE, this.buffer)
-  }
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-  if(this.dims[0] <= 0 || this.dims[1] <= 0) {
-    return null
-  }
-  var region = ndarray(this.buffer, [this.dims[0], this.dims[1], 4], [4, this.dims[0]*4, 1])
-  this.region = region
-  var closest = selectRange(region.hi(region.shape[0], region.shape[1], 1), this.target[0], this.target[1])
-  var dx = closest[0]
-  var dy = closest[1]
-  if(dx < 0 || Math.pow(this.radius, 2) < closest[2]) {
-    return null
-  }
-  var c0 = region.get(dx, dy, 0)
-  var c1 = region.get(dx, dy, 1)
-  var c2 = region.get(dx, dy, 2)
-  var c3 = region.get(dx, dy, 3)
-  dx = (dx + this.offset[0])|0
-  dy = (dy + this.offset[1])|0
-  return new SelectResult(dx, dy, c0, [c1, c2, c3], Math.sqrt(closest[2]))
-}
-
-proto.dispose = function() {
-  this.fbo.dispose()
-  pool.free(this.buffer)
-}
-
-function createSelectBuffer(gl, shape) {
-  var fbo = createFBO(gl, shape)
-  var buffer = pool.mallocUint8(shape[0]*shape[1]*4)
-  return new SelectBuffer(gl, fbo, buffer)
-}
-},{"cwise/lib/wrapper":31,"gl-fbo":32,"typedarray-pool":33,"ndarray":7}],12:[function(require,module,exports){
+},{"events":20}],12:[function(require,module,exports){
 "use strict"
 
 var EventEmitter = require("events").EventEmitter
@@ -10890,7 +10892,7 @@ function createShell(options) {
 
 module.exports = createShell
 
-},{"events":20,"util":30,"./lib/raf-polyfill.js":21,"./lib/mousewheel-polyfill.js":22,"./lib/hrtime-polyfill.js":23,"domready":34,"vkey":35,"invert-hash":36,"uniq":37,"binary-search-bounds":38,"iota-array":39}],13:[function(require,module,exports){
+},{"events":20,"util":33,"./lib/raf-polyfill.js":21,"./lib/mousewheel-polyfill.js":22,"./lib/hrtime-polyfill.js":23,"domready":34,"vkey":35,"invert-hash":36,"uniq":37,"binary-search-bounds":38,"iota-array":39}],13:[function(require,module,exports){
 'use strict'
 
 var weakMap = typeof WeakMap === 'undefined' ? require('weakmap') : WeakMap
@@ -11103,20 +11105,6 @@ for(i = 112; i < 136; ++i) {
 }
 
 })()
-},{}],36:[function(require,module,exports){
-"use strict"
-
-function invert(hash) {
-  var result = {}
-  for(var i in hash) {
-    if(hash.hasOwnProperty(i)) {
-      result[hash[i]] = i
-    }
-  }
-  return result
-}
-
-module.exports = invert
 },{}],37:[function(require,module,exports){
 "use strict"
 
@@ -11176,6 +11164,20 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
+},{}],36:[function(require,module,exports){
+"use strict"
+
+function invert(hash) {
+  var result = {}
+  for(var i in hash) {
+    if(hash.hasOwnProperty(i)) {
+      result[hash[i]] = i
+    }
+  }
+  return result
+}
+
+module.exports = invert
 },{}],38:[function(require,module,exports){
 "use strict"
 
@@ -11622,7 +11624,7 @@ function createSpikes(gl, options) {
     spikes.update(options);
     return spikes;
 }
-},{"glslify/adapter.js":41,"gl-axes/lib/cube":27,"gl-buffer":42,"gl-vao":43,"glslify":44}],44:[function(require,module,exports){
+},{"glslify/adapter.js":41,"gl-axes/lib/cube":26,"gl-buffer":42,"gl-vao":43,"glslify":44}],44:[function(require,module,exports){
 module.exports = noop
 
 function noop() {
@@ -12147,7 +12149,9 @@ main_loop:
 }
 },{"uniq":45}],18:[function(require,module,exports){
 module.exports = require("cwise-compiler")
-},{"cwise-compiler":46}],33:[function(require,module,exports){
+},{"cwise-compiler":46}],30:[function(require,module,exports){
+module.exports = require("cwise-compiler")
+},{"cwise-compiler":47}],32:[function(require,module,exports){
 (function(global,Buffer){var bits = require("bit-twiddle")
 var dup = require("dup")
 if(!global.__TYPEDARRAY_POOL) {
@@ -12516,9 +12520,7 @@ exports.clearCache = function clearCache() {
   }
 }
 })(self,require("__browserify_Buffer").Buffer)
-},{"bit-twiddle":47,"dup":48,"__browserify_Buffer":15}],31:[function(require,module,exports){
-module.exports = require("cwise-compiler")
-},{"cwise-compiler":49}],45:[function(require,module,exports){
+},{"bit-twiddle":48,"dup":49,"__browserify_Buffer":16}],45:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -12577,7 +12579,7 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
  *
@@ -12783,7 +12785,7 @@ exports.nextCombination = function(v) {
 }
 
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict"
 
 function dupe_array(count, value, i) {
@@ -12844,7 +12846,7 @@ function programify(vertex, fragment, uniforms, attributes) {
   }
 }
 
-},{"gl-shader-core":50}],32:[function(require,module,exports){
+},{"gl-shader-core":50}],31:[function(require,module,exports){
 'use strict'
 
 var webglew = require('webglew')
@@ -13441,7 +13443,7 @@ function compileCwise(user_args) {
 
 module.exports = compileCwise
 
-},{"./lib/thunk.js":56}],49:[function(require,module,exports){
+},{"./lib/thunk.js":56}],47:[function(require,module,exports){
 "use strict"
 
 var createThunk = require("./lib/thunk.js")
@@ -13871,7 +13873,7 @@ function createBuffer(gl, data, type, usage) {
 }
 
 module.exports = createBuffer
-},{"webglew":60,"typedarray-pool":33,"ndarray-ops":61,"ndarray":7}],58:[function(require,module,exports){
+},{"webglew":60,"typedarray-pool":32,"ndarray":7,"ndarray-ops":61}],58:[function(require,module,exports){
 "use strict"
 
 function doBind(gl, elements, attributes) {
@@ -13926,131 +13928,7 @@ function doBind(gl, elements, attributes) {
 }
 
 module.exports = doBind
-},{}],50:[function(require,module,exports){
-'use strict'
-
-var createUniformWrapper = require('./lib/create-uniforms')
-var createAttributeWrapper = require('./lib/create-attributes')
-var makeReflect = require('./lib/reflect')
-
-//Shader object
-function Shader(gl, prog, vertShader, fragShader) {
-  this.gl = gl
-  this.handle = prog
-  this.attributes = null
-  this.uniforms = null
-  this.types = null
-  this.vertexShader = vertShader
-  this.fragmentShader = fragShader
-}
-
-//Binds the shader
-Shader.prototype.bind = function() {
-  this.gl.useProgram(this.handle)
-}
-
-//Destroy shader, release resources
-Shader.prototype.dispose = function() {
-  var gl = this.gl
-  gl.deleteShader(this.vertexShader)
-  gl.deleteShader(this.fragmentShader)
-  gl.deleteProgram(this.handle)
-}
-
-Shader.prototype.updateExports = function(uniforms, attributes) {
-  var locations = new Array(uniforms.length)
-  var program = this.handle
-  var gl = this.gl
-
-  var doLink = relinkUniforms.bind(void 0,
-    gl,
-    program,
-    locations,
-    uniforms
-  )
-  doLink()
-
-  this.types = {
-    uniforms: makeReflect(uniforms),
-    attributes: makeReflect(attributes)
-  }
-
-  this.attributes = createAttributeWrapper(
-    gl,
-    program,
-    attributes,
-    doLink
-  )
-
-  Object.defineProperty(this, 'uniforms', createUniformWrapper(
-    gl,
-    program,
-    uniforms,
-    locations
-  ))
-}
-
-//Relinks all uniforms
-function relinkUniforms(gl, program, locations, uniforms) {
-  for(var i=0; i<uniforms.length; ++i) {
-    locations[i] = gl.getUniformLocation(program, uniforms[i].name)
-  }
-}
-
-//Compiles and links a shader program with the given attribute and vertex list
-function createShader(
-    gl
-  , vertSource
-  , fragSource
-  , uniforms
-  , attributes) {
-  
-  //Compile vertex shader
-  var vertShader = gl.createShader(gl.VERTEX_SHADER)
-  gl.shaderSource(vertShader, vertSource)
-  gl.compileShader(vertShader)
-  if(!gl.getShaderParameter(vertShader, gl.COMPILE_STATUS)) {
-    var errLog = gl.getShaderInfoLog(vertShader)
-    console.error('gl-shader: Error compling vertex shader:', errLog)
-    throw new Error('gl-shader: Error compiling vertex shader:' + errLog)
-  }
-  
-  //Compile fragment shader
-  var fragShader = gl.createShader(gl.FRAGMENT_SHADER)
-  gl.shaderSource(fragShader, fragSource)
-  gl.compileShader(fragShader)
-  if(!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
-    var errLog = gl.getShaderInfoLog(fragShader)
-    console.error('gl-shader: Error compiling fragment shader:', errLog)
-    throw new Error('gl-shader: Error compiling fragment shader:' + errLog)
-  }
-  
-  //Link program
-  var program = gl.createProgram()
-  gl.attachShader(program, fragShader)
-  gl.attachShader(program, vertShader)
-  gl.linkProgram(program)
-  if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    var errLog = gl.getProgramInfoLog(program)
-    console.error('gl-shader: Error linking shader program:', errLog)
-    throw new Error('gl-shader: Error linking shader program:' + errLog)
-  }
-  
-  //Return final linked shader object
-  var shader = new Shader(
-    gl,
-    program,
-    vertShader,
-    fragShader
-  )
-  shader.updateExports(uniforms, attributes)
-
-  return shader
-}
-
-module.exports = createShader
-
-},{"./lib/create-uniforms":62,"./lib/create-attributes":63,"./lib/reflect":64}],59:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function(){/* (The MIT License)
  *
  * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
@@ -14293,7 +14171,180 @@ void function(global, undefined_, undefined){
 }((0, eval)('this'));
 
 })()
-},{}],63:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
+'use strict'
+
+var createUniformWrapper = require('./lib/create-uniforms')
+var createAttributeWrapper = require('./lib/create-attributes')
+var makeReflect = require('./lib/reflect')
+
+//Shader object
+function Shader(gl, prog, vertShader, fragShader) {
+  this.gl = gl
+  this.handle = prog
+  this.attributes = null
+  this.uniforms = null
+  this.types = null
+  this.vertexShader = vertShader
+  this.fragmentShader = fragShader
+}
+
+//Binds the shader
+Shader.prototype.bind = function() {
+  this.gl.useProgram(this.handle)
+}
+
+//Destroy shader, release resources
+Shader.prototype.dispose = function() {
+  var gl = this.gl
+  gl.deleteShader(this.vertexShader)
+  gl.deleteShader(this.fragmentShader)
+  gl.deleteProgram(this.handle)
+}
+
+Shader.prototype.updateExports = function(uniforms, attributes) {
+  var locations = new Array(uniforms.length)
+  var program = this.handle
+  var gl = this.gl
+
+  var doLink = relinkUniforms.bind(void 0,
+    gl,
+    program,
+    locations,
+    uniforms
+  )
+  doLink()
+
+  this.types = {
+    uniforms: makeReflect(uniforms),
+    attributes: makeReflect(attributes)
+  }
+
+  this.attributes = createAttributeWrapper(
+    gl,
+    program,
+    attributes,
+    doLink
+  )
+
+  Object.defineProperty(this, 'uniforms', createUniformWrapper(
+    gl,
+    program,
+    uniforms,
+    locations
+  ))
+}
+
+//Relinks all uniforms
+function relinkUniforms(gl, program, locations, uniforms) {
+  for(var i=0; i<uniforms.length; ++i) {
+    locations[i] = gl.getUniformLocation(program, uniforms[i].name)
+  }
+}
+
+//Compiles and links a shader program with the given attribute and vertex list
+function createShader(
+    gl
+  , vertSource
+  , fragSource
+  , uniforms
+  , attributes) {
+  
+  //Compile vertex shader
+  var vertShader = gl.createShader(gl.VERTEX_SHADER)
+  gl.shaderSource(vertShader, vertSource)
+  gl.compileShader(vertShader)
+  if(!gl.getShaderParameter(vertShader, gl.COMPILE_STATUS)) {
+    var errLog = gl.getShaderInfoLog(vertShader)
+    console.error('gl-shader: Error compling vertex shader:', errLog)
+    throw new Error('gl-shader: Error compiling vertex shader:' + errLog)
+  }
+  
+  //Compile fragment shader
+  var fragShader = gl.createShader(gl.FRAGMENT_SHADER)
+  gl.shaderSource(fragShader, fragSource)
+  gl.compileShader(fragShader)
+  if(!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
+    var errLog = gl.getShaderInfoLog(fragShader)
+    console.error('gl-shader: Error compiling fragment shader:', errLog)
+    throw new Error('gl-shader: Error compiling fragment shader:' + errLog)
+  }
+  
+  //Link program
+  var program = gl.createProgram()
+  gl.attachShader(program, fragShader)
+  gl.attachShader(program, vertShader)
+  gl.linkProgram(program)
+  if(!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    var errLog = gl.getProgramInfoLog(program)
+    console.error('gl-shader: Error linking shader program:', errLog)
+    throw new Error('gl-shader: Error linking shader program:' + errLog)
+  }
+  
+  //Return final linked shader object
+  var shader = new Shader(
+    gl,
+    program,
+    vertShader,
+    fragShader
+  )
+  shader.updateExports(uniforms, attributes)
+
+  return shader
+}
+
+module.exports = createShader
+
+},{"./lib/create-uniforms":62,"./lib/create-attributes":63,"./lib/reflect":64}],56:[function(require,module,exports){
+"use strict"
+
+var compile = require("./compile.js")
+
+function createThunk(proc) {
+  var code = ["'use strict'", "var CACHED={}"]
+  var vars = []
+  var thunkName = proc.funcName + "_cwise_thunk"
+  
+  //Build thunk
+  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
+  var typesig = []
+  var string_typesig = []
+  var proc_args = [["array",proc.arrayArgs[0],".shape"].join("")]
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    var j = proc.arrayArgs[i]
+    vars.push(["t", j, "=array", j, ".dtype,",
+               "r", j, "=array", j, ".order"].join(""))
+    typesig.push("t" + j)
+    typesig.push("r" + j)
+    string_typesig.push("t"+j)
+    string_typesig.push("r"+j+".join()")
+    proc_args.push("array" + j + ".data")
+    proc_args.push("array" + j + ".stride")
+    proc_args.push("array" + j + ".offset|0")
+  }
+  for(var i=0; i<proc.scalarArgs.length; ++i) {
+    proc_args.push("scalar" + proc.scalarArgs[i])
+  }
+  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
+  vars.push("proc=CACHED[type]")
+  code.push("var " + vars.join(","))
+  
+  code.push(["if(!proc){",
+             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
+             "return proc(", proc_args.join(","), ")}"].join(""))
+
+  if(proc.debug) {
+    console.log("Generated thunk:", code.join("\n"))
+  }
+  
+  //Compile thunk
+  var thunk = new Function("compile", code.join("\n"))
+  return thunk(compile.bind(undefined, proc))
+}
+
+module.exports = createThunk
+
+},{"./compile.js":65}],63:[function(require,module,exports){
 'use strict'
 
 module.exports = createAttributeWrapper
@@ -14389,7 +14440,56 @@ function createAttributeWrapper(gl, program, attributes, doLink) {
   }
   return obj
 }
-},{}],64:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
+"use strict"
+
+var compile = require("./compile.js")
+
+function createThunk(proc) {
+  var code = ["'use strict'", "var CACHED={}"]
+  var vars = []
+  var thunkName = proc.funcName + "_cwise_thunk"
+  
+  //Build thunk
+  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
+  var typesig = []
+  var string_typesig = []
+  var proc_args = [["array",proc.arrayArgs[0],".shape"].join("")]
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    var j = proc.arrayArgs[i]
+    vars.push(["t", j, "=array", j, ".dtype,",
+               "r", j, "=array", j, ".order"].join(""))
+    typesig.push("t" + j)
+    typesig.push("r" + j)
+    string_typesig.push("t"+j)
+    string_typesig.push("r"+j+".join()")
+    proc_args.push("array" + j + ".data")
+    proc_args.push("array" + j + ".stride")
+    proc_args.push("array" + j + ".offset|0")
+  }
+  for(var i=0; i<proc.scalarArgs.length; ++i) {
+    proc_args.push("scalar" + proc.scalarArgs[i])
+  }
+  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
+  vars.push("proc=CACHED[type]")
+  code.push("var " + vars.join(","))
+  
+  code.push(["if(!proc){",
+             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
+             "return proc(", proc_args.join(","), ")}"].join(""))
+
+  if(proc.debug) {
+    console.log("Generated thunk:", code.join("\n"))
+  }
+  
+  //Compile thunk
+  var thunk = new Function("compile", code.join("\n"))
+  return thunk(compile.bind(undefined, proc))
+}
+
+module.exports = createThunk
+
+},{"./compile.js":66}],64:[function(require,module,exports){
 'use strict'
 
 module.exports = makeReflectTypes
@@ -14447,105 +14547,7 @@ function makeReflectTypes(uniforms, useIndex) {
   }
   return obj
 }
-},{}],56:[function(require,module,exports){
-"use strict"
-
-var compile = require("./compile.js")
-
-function createThunk(proc) {
-  var code = ["'use strict'", "var CACHED={}"]
-  var vars = []
-  var thunkName = proc.funcName + "_cwise_thunk"
-  
-  //Build thunk
-  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
-  var typesig = []
-  var string_typesig = []
-  var proc_args = [["array",proc.arrayArgs[0],".shape"].join("")]
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    var j = proc.arrayArgs[i]
-    vars.push(["t", j, "=array", j, ".dtype,",
-               "r", j, "=array", j, ".order"].join(""))
-    typesig.push("t" + j)
-    typesig.push("r" + j)
-    string_typesig.push("t"+j)
-    string_typesig.push("r"+j+".join()")
-    proc_args.push("array" + j + ".data")
-    proc_args.push("array" + j + ".stride")
-    proc_args.push("array" + j + ".offset|0")
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    proc_args.push("scalar" + proc.scalarArgs[i])
-  }
-  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
-  vars.push("proc=CACHED[type]")
-  code.push("var " + vars.join(","))
-  
-  code.push(["if(!proc){",
-             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
-             "return proc(", proc_args.join(","), ")}"].join(""))
-
-  if(proc.debug) {
-    console.log("Generated thunk:", code.join("\n"))
-  }
-  
-  //Compile thunk
-  var thunk = new Function("compile", code.join("\n"))
-  return thunk(compile.bind(undefined, proc))
-}
-
-module.exports = createThunk
-
-},{"./compile.js":65}],57:[function(require,module,exports){
-"use strict"
-
-var compile = require("./compile.js")
-
-function createThunk(proc) {
-  var code = ["'use strict'", "var CACHED={}"]
-  var vars = []
-  var thunkName = proc.funcName + "_cwise_thunk"
-  
-  //Build thunk
-  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
-  var typesig = []
-  var string_typesig = []
-  var proc_args = [["array",proc.arrayArgs[0],".shape"].join("")]
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    var j = proc.arrayArgs[i]
-    vars.push(["t", j, "=array", j, ".dtype,",
-               "r", j, "=array", j, ".order"].join(""))
-    typesig.push("t" + j)
-    typesig.push("r" + j)
-    string_typesig.push("t"+j)
-    string_typesig.push("r"+j+".join()")
-    proc_args.push("array" + j + ".data")
-    proc_args.push("array" + j + ".stride")
-    proc_args.push("array" + j + ".offset|0")
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    proc_args.push("scalar" + proc.scalarArgs[i])
-  }
-  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
-  vars.push("proc=CACHED[type]")
-  code.push("var " + vars.join(","))
-  
-  code.push(["if(!proc){",
-             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
-             "return proc(", proc_args.join(","), ")}"].join(""))
-
-  if(proc.debug) {
-    console.log("Generated thunk:", code.join("\n"))
-  }
-  
-  //Compile thunk
-  var thunk = new Function("compile", code.join("\n"))
-  return thunk(compile.bind(undefined, proc))
-}
-
-module.exports = createThunk
-
-},{"./compile.js":66}],67:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
  *
@@ -14751,7 +14753,7 @@ exports.nextCombination = function(v) {
 }
 
 
-},{}],27:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 "use strict"
 
 module.exports = getCubeEdges
@@ -14867,7 +14869,7 @@ function getCubeEdges(model, view, projection, bounds) {
     axis: axis
   }
 }
-},{"bit-twiddle":67,"gl-matrix":10}],60:[function(require,module,exports){
+},{"bit-twiddle":67,"gl-matrix":10}],55:[function(require,module,exports){
 'use strict'
 
 var weakMap = typeof WeakMap === 'undefined' ? require('weakmap') : WeakMap
@@ -14909,7 +14911,7 @@ function initWebGLEW(gl) {
   return extensions
 }
 module.exports = initWebGLEW
-},{"weakmap":68}],55:[function(require,module,exports){
+},{"weakmap":68}],60:[function(require,module,exports){
 'use strict'
 
 var weakMap = typeof WeakMap === 'undefined' ? require('weakmap') : WeakMap
@@ -14972,7 +14974,7 @@ var invert = require("gl-mat4/invert");
 var bsearch = require("binary-search-bounds");
 var gradient = require("ndarray-gradient");
 var SURFACE_VERTEX_SIZE = 4 * (4 + 2 + 3);
-var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  float norient = 2.0 - step(0.0, dot(eyeDirection, normal));\n  surfaceNormal = -normal * norient;\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.0001);\n  float LdotH = max(dot(lightDirection, H), 0.0001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / (3.14159265 * VdotN);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = mix(litColor, contourColor, contourTint);\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.0001);\n  float LdotH = max(dot(lightDirection, H), 0.0001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / (3.14159265 * VdotN);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = mix(litColor, contourColor, contourTint);\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"}]), createPickShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  float norient = 2.0 - step(0.0, dot(eyeDirection, normal));\n  surfaceNormal = -normal * norient;\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createPickContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"}]);
+var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  float norient = 2.0 * step(0.0, dot(eyeDirection, normal)) - 1.0;\n  surfaceNormal = normal * norient;\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.0001);\n  float LdotH = max(dot(lightDirection, H), 0.0001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / (3.14159265 * VdotN);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = mix(litColor, contourColor, contourTint);\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.0001);\n  float LdotH = max(dot(lightDirection, H), 0.0001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / (3.14159265 * VdotN);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = mix(litColor, contourColor, contourTint);\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"}]), createPickShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  float norient = 2.0 * step(0.0, dot(eyeDirection, normal)) - 1.0;\n  surfaceNormal = normal * norient;\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createPickContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"}]);
 var IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 var QUAD = [[0, 0], [0, 1], [1, 0], [1, 1], [1, 0], [0, 1]];
 var PERMUTATIONS = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
@@ -15637,7 +15639,7 @@ proto.update = function(params) {
             if (nl < 0.000001) {
                 nl = 0;
             } else {
-                nl = -1 / Math.sqrt(nl);
+                nl = 1 / Math.sqrt(nl);
             }
 
             normals.set(i, j, 0, nx * nl);
@@ -15939,7 +15941,134 @@ function createSurfacePlot(gl, field, params) {
     surface.update(nparams);
     return surface;
 }
-},{"glslify/adapter.js":41,"gl-axes/lib/cube":27,"gl-mat4/multiply":70,"gl-mat4/invert":71,"dup":72,"bit-twiddle":73,"glslify":44,"gl-buffer":42,"gl-vao":43,"gl-texture2d":52,"typedarray-pool":33,"colormap":74,"ndarray-ops":61,"ndarray-pack":75,"ndarray":7,"surface-nets":76,"binary-search-bounds":77,"ndarray-gradient":78}],24:[function(require,module,exports){
+},{"glslify/adapter.js":41,"gl-axes/lib/cube":26,"gl-mat4/multiply":70,"gl-mat4/invert":71,"dup":72,"bit-twiddle":73,"glslify":44,"gl-buffer":42,"gl-vao":43,"gl-texture2d":52,"typedarray-pool":32,"colormap":74,"ndarray-ops":61,"ndarray-pack":75,"ndarray":7,"surface-nets":76,"binary-search-bounds":77,"ndarray-gradient":78}],24:[function(require,module,exports){
+"use strict";
+module.exports = createLines;
+var createBuffer = require("gl-buffer");
+var createVAO = require("gl-vao");
+var glslify = require("glslify");
+var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nattribute vec2 position;\nuniform mat4 model, view, projection;\nuniform vec3 offset, majorAxis, minorAxis;\nvoid main() {\n  vec3 vPosition = position.x * majorAxis + position.y * minorAxis + offset;\n  gl_Position = projection * view * model * vec4(vPosition, 1.0);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec4 color;\nvoid main() {\n  gl_FragColor = color;\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"offset","type":"vec3"},{"name":"majorAxis","type":"vec3"},{"name":"minorAxis","type":"vec3"},{"name":"color","type":"vec4"}], [{"name":"position","type":"vec2"}]);
+
+function Lines(gl, vertBuffer, vao, shader, tickCount, tickOffset, gridCount, gridOffset) {
+    this.gl = gl;
+    this.vertBuffer = vertBuffer;
+    this.vao = vao;
+    this.shader = shader;
+    this.tickCount = tickCount;
+    this.tickOffset = tickOffset;
+    this.gridCount = gridCount;
+    this.gridOffset = gridOffset;
+}
+
+var proto = Lines.prototype;
+
+proto.bind = function(model, view, projection) {
+    this.shader.bind();
+    this.shader.uniforms.model = model;
+    this.shader.uniforms.view = view;
+    this.shader.uniforms.projection = projection;
+    this.vao.bind();
+};
+
+proto.drawAxisLine = function(j, bounds, offset, color) {
+    this.shader.uniforms.majorAxis = [0, 0, 0];
+    var minorAxis = [0, 0, 0];
+    minorAxis[j] = bounds[1][j] - bounds[0][j];
+    this.shader.uniforms.minorAxis = minorAxis;
+    var noffset = offset.slice();
+    noffset[j] += bounds[0][j];
+    this.shader.uniforms.offset = noffset;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, 2);
+};
+
+proto.drawAxisTicks = function(j, offset, minorAxis, color) {
+    var majorAxis = [0, 0, 0];
+    majorAxis[j] = 1;
+    this.shader.uniforms.majorAxis = majorAxis;
+    this.shader.uniforms.offset = offset;
+    this.shader.uniforms.minorAxis = minorAxis;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, this.tickCount[j], this.tickOffset[j]);
+};
+
+proto.drawGrid = function(i, j, bounds, offset, color) {
+    var minorAxis = [0, 0, 0];
+    minorAxis[j] = bounds[1][j] - bounds[0][j];
+    this.shader.uniforms.minorAxis = minorAxis;
+    var noffset = offset.slice();
+    noffset[j] += bounds[0][j];
+    this.shader.uniforms.offset = noffset;
+    var majorAxis = [0, 0, 0];
+    majorAxis[i] = 1;
+    this.shader.uniforms.majorAxis = majorAxis;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, this.gridCount[i], this.gridOffset[i]);
+};
+
+proto.drawZero = function(j, bounds, offset, color) {
+    this.shader.uniforms.majorAxis = [0, 0, 0];
+    var minorAxis = [0, 0, 0];
+    minorAxis[j] = bounds[1][j] - bounds[0][j];
+    this.shader.uniforms.minorAxis = minorAxis;
+    var noffset = offset.slice();
+    noffset[j] += bounds[0][j];
+    this.shader.uniforms.offset = noffset;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, 2);
+};
+
+proto.dispose = function() {
+    this.vao.dispose();
+    this.vertBuffer.dispose();
+    this.shader.dispose();
+};
+
+function createLines(gl, bounds, ticks) {
+    var vertices = [];
+    var tickOffset = [0, 0, 0];
+    var tickCount = [0, 0, 0];
+    var gridOffset = [0, 0, 0];
+    var gridCount = [0, 0, 0];
+    vertices.push(0, 0, 0, 1);
+
+    for (var i = 0; i < 3; ++i) {
+        var start = vertices.length / 2 | 0;
+
+        for (var j = 0; j < ticks[i].length; ++j) {
+            vertices.push(+ticks[i][j].x, 0, +ticks[i][j].x, 1);
+        }
+
+        var end = vertices.length / 2 | 0;
+        tickOffset[i] = start;
+        tickCount[i] = end - start;
+        var start = vertices.length / 2 | 0;
+
+        for (var k = 0; k < ticks[i].length; ++k) {
+            var tx = +ticks[i][k].x;
+            vertices.push(tx, 0, tx, 1);
+        }
+
+        var end = vertices.length / 2 | 0;
+        gridOffset[i] = start;
+        gridCount[i] = end - start;
+    }
+
+    var vertBuf = createBuffer(gl, new Float32Array(vertices));
+
+    var vao = createVAO(gl, [{
+        "buffer": vertBuf,
+        "type": gl.FLOAT,
+        "size": 2,
+        "stride": 0,
+        "offset": 0
+    }]);
+
+    var shader = createShader(gl);
+    shader.attributes.position.location = 0;
+    return new Lines(gl, vertBuf, vao, shader, tickCount, tickOffset, gridCount, gridOffset);
+}
+},{"glslify/adapter.js":41,"gl-buffer":42,"gl-vao":43,"glslify":44}],25:[function(require,module,exports){
 (function(process){"use strict";
 module.exports = createTextSprites;
 var createBuffer = require("gl-buffer");
@@ -16072,134 +16201,7 @@ function createTextSprites(gl, bounds, labels, labelFont, ticks, tickFont) {
     return new TextSprites(gl, shader, buffer, vao, tickOffset, tickCount, labelOffset, labelCount);
 }
 })(require("__browserify_process"))
-},{"glslify/adapter.js":41,"vectorize-text":79,"gl-buffer":42,"gl-vao":43,"glslify":44,"__browserify_process":19}],25:[function(require,module,exports){
-"use strict";
-module.exports = createLines;
-var createBuffer = require("gl-buffer");
-var createVAO = require("gl-vao");
-var glslify = require("glslify");
-var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nattribute vec2 position;\nuniform mat4 model, view, projection;\nuniform vec3 offset, majorAxis, minorAxis;\nvoid main() {\n  vec3 vPosition = position.x * majorAxis + position.y * minorAxis + offset;\n  gl_Position = projection * view * model * vec4(vPosition, 1.0);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec4 color;\nvoid main() {\n  gl_FragColor = color;\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"offset","type":"vec3"},{"name":"majorAxis","type":"vec3"},{"name":"minorAxis","type":"vec3"},{"name":"color","type":"vec4"}], [{"name":"position","type":"vec2"}]);
-
-function Lines(gl, vertBuffer, vao, shader, tickCount, tickOffset, gridCount, gridOffset) {
-    this.gl = gl;
-    this.vertBuffer = vertBuffer;
-    this.vao = vao;
-    this.shader = shader;
-    this.tickCount = tickCount;
-    this.tickOffset = tickOffset;
-    this.gridCount = gridCount;
-    this.gridOffset = gridOffset;
-}
-
-var proto = Lines.prototype;
-
-proto.bind = function(model, view, projection) {
-    this.shader.bind();
-    this.shader.uniforms.model = model;
-    this.shader.uniforms.view = view;
-    this.shader.uniforms.projection = projection;
-    this.vao.bind();
-};
-
-proto.drawAxisLine = function(j, bounds, offset, color) {
-    this.shader.uniforms.majorAxis = [0, 0, 0];
-    var minorAxis = [0, 0, 0];
-    minorAxis[j] = bounds[1][j] - bounds[0][j];
-    this.shader.uniforms.minorAxis = minorAxis;
-    var noffset = offset.slice();
-    noffset[j] += bounds[0][j];
-    this.shader.uniforms.offset = noffset;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, 2);
-};
-
-proto.drawAxisTicks = function(j, offset, minorAxis, color) {
-    var majorAxis = [0, 0, 0];
-    majorAxis[j] = 1;
-    this.shader.uniforms.majorAxis = majorAxis;
-    this.shader.uniforms.offset = offset;
-    this.shader.uniforms.minorAxis = minorAxis;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, this.tickCount[j], this.tickOffset[j]);
-};
-
-proto.drawGrid = function(i, j, bounds, offset, color) {
-    var minorAxis = [0, 0, 0];
-    minorAxis[j] = bounds[1][j] - bounds[0][j];
-    this.shader.uniforms.minorAxis = minorAxis;
-    var noffset = offset.slice();
-    noffset[j] += bounds[0][j];
-    this.shader.uniforms.offset = noffset;
-    var majorAxis = [0, 0, 0];
-    majorAxis[i] = 1;
-    this.shader.uniforms.majorAxis = majorAxis;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, this.gridCount[i], this.gridOffset[i]);
-};
-
-proto.drawZero = function(j, bounds, offset, color) {
-    this.shader.uniforms.majorAxis = [0, 0, 0];
-    var minorAxis = [0, 0, 0];
-    minorAxis[j] = bounds[1][j] - bounds[0][j];
-    this.shader.uniforms.minorAxis = minorAxis;
-    var noffset = offset.slice();
-    noffset[j] += bounds[0][j];
-    this.shader.uniforms.offset = noffset;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, 2);
-};
-
-proto.dispose = function() {
-    this.vao.dispose();
-    this.vertBuffer.dispose();
-    this.shader.dispose();
-};
-
-function createLines(gl, bounds, ticks) {
-    var vertices = [];
-    var tickOffset = [0, 0, 0];
-    var tickCount = [0, 0, 0];
-    var gridOffset = [0, 0, 0];
-    var gridCount = [0, 0, 0];
-    vertices.push(0, 0, 0, 1);
-
-    for (var i = 0; i < 3; ++i) {
-        var start = vertices.length / 2 | 0;
-
-        for (var j = 0; j < ticks[i].length; ++j) {
-            vertices.push(+ticks[i][j].x, 0, +ticks[i][j].x, 1);
-        }
-
-        var end = vertices.length / 2 | 0;
-        tickOffset[i] = start;
-        tickCount[i] = end - start;
-        var start = vertices.length / 2 | 0;
-
-        for (var k = 0; k < ticks[i].length; ++k) {
-            var tx = +ticks[i][k].x;
-            vertices.push(tx, 0, tx, 1);
-        }
-
-        var end = vertices.length / 2 | 0;
-        gridOffset[i] = start;
-        gridCount[i] = end - start;
-    }
-
-    var vertBuf = createBuffer(gl, new Float32Array(vertices));
-
-    var vao = createVAO(gl, [{
-        "buffer": vertBuf,
-        "type": gl.FLOAT,
-        "size": 2,
-        "stride": 0,
-        "offset": 0
-    }]);
-
-    var shader = createShader(gl);
-    shader.attributes.position.location = 0;
-    return new Lines(gl, vertBuf, vao, shader, tickCount, tickOffset, gridCount, gridOffset);
-}
-},{"glslify/adapter.js":41,"gl-buffer":42,"gl-vao":43,"glslify":44}],26:[function(require,module,exports){
+},{"glslify/adapter.js":41,"vectorize-text":79,"gl-buffer":42,"gl-vao":43,"glslify":44,"__browserify_process":19}],27:[function(require,module,exports){
 "use strict";
 module.exports = createBackgroundCube;
 var createBuffer = require("gl-buffer");
@@ -16848,7 +16850,7 @@ function createTexture2D(gl) {
   }
   throw new Error('gl-texture2d: Invalid arguments for texture2d constructor')
 }
-},{"webglew":80,"ndarray":7,"ndarray-ops":61,"typedarray-pool":33}],70:[function(require,module,exports){
+},{"webglew":80,"ndarray":7,"ndarray-ops":61,"typedarray-pool":32}],70:[function(require,module,exports){
 module.exports = multiply;
 
 /**
@@ -18880,7 +18882,295 @@ function surfaceNets(array,level) {
   }
   return proc(array,level)
 }
-},{"ndarray-extract-contour":89,"triangulate-hypercube":90,"zero-crossings":91}],84:[function(require,module,exports){
+},{"ndarray-extract-contour":89,"triangulate-hypercube":90,"zero-crossings":91}],65:[function(require,module,exports){
+"use strict"
+
+var uniq = require("uniq")
+
+function innerFill(order, proc, body) {
+  var dimension = order.length
+    , nargs = proc.arrayArgs.length
+    , has_index = proc.indexArgs.length>0
+    , code = []
+    , vars = []
+    , idx=0, pidx=0, i, j
+  for(i=0; i<dimension; ++i) {
+    vars.push(["i",i,"=0"].join(""))
+  }
+  //Compute scan deltas
+  for(j=0; j<nargs; ++j) {
+    for(i=0; i<dimension; ++i) {
+      pidx = idx
+      idx = order[i]
+      if(i === 0) {
+        vars.push(["d",j,"s",i,"=t",j,"p",idx].join(""))
+      } else {
+        vars.push(["d",j,"s",i,"=(t",j,"p",idx,"-s",pidx,"*t",j,"p",pidx,")"].join(""))
+      }
+    }
+  }
+  code.push("var " + vars.join(","))
+  //Scan loop
+  for(i=dimension-1; i>=0; --i) {
+    idx = order[i]
+    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
+  }
+  //Push body of inner loop
+  code.push(body)
+  //Advance scan pointers
+  for(i=0; i<dimension; ++i) {
+    pidx = idx
+    idx = order[i]
+    for(j=0; j<nargs; ++j) {
+      code.push(["p",j,"+=d",j,"s",i].join(""))
+    }
+    if(has_index) {
+      if(i > 0) {
+        code.push(["index[",pidx,"]-=s",pidx].join(""))
+      }
+      code.push(["++index[",idx,"]"].join(""))
+    }
+    code.push("}")
+  }
+  return code.join("\n")
+}
+
+function outerFill(matched, order, proc, body) {
+  var dimension = order.length
+    , nargs = proc.arrayArgs.length
+    , blockSize = proc.blockSize
+    , has_index = proc.indexArgs.length > 0
+    , code = []
+  for(var i=0; i<nargs; ++i) {
+    code.push(["var offset",i,"=p",i].join(""))
+  }
+  //Generate matched loops
+  for(var i=matched; i<dimension; ++i) {
+    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join(""))
+    code.push(["if(j",i,"<",blockSize,"){"].join(""))
+    code.push(["s",order[i],"=j",i].join(""))
+    code.push(["j",i,"=0"].join(""))
+    code.push(["}else{s",order[i],"=",blockSize].join(""))
+    code.push(["j",i,"-=",blockSize,"}"].join(""))
+    if(has_index) {
+      code.push(["index[",order[i],"]=j",i].join(""))
+    }
+  }
+  for(var i=0; i<nargs; ++i) {
+    var indexStr = ["offset"+i]
+    for(var j=matched; j<dimension; ++j) {
+      indexStr.push(["j",j,"*t",i,"p",order[j]].join(""))
+    }
+    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
+  }
+  code.push(innerFill(order, proc, body))
+  for(var i=matched; i<dimension; ++i) {
+    code.push("}")
+  }
+  return code.join("\n")
+}
+
+//Count the number of compatible inner orders
+function countMatches(orders) {
+  var matched = 0, dimension = orders[0].length
+  while(matched < dimension) {
+    for(var j=1; j<orders.length; ++j) {
+      if(orders[j][matched] !== orders[0][matched]) {
+        return matched
+      }
+    }
+    ++matched
+  }
+  return matched
+}
+
+//Processes a block according to the given data types
+function processBlock(block, proc, dtypes) {
+  var code = block.body
+  var pre = []
+  var post = []
+  for(var i=0; i<block.args.length; ++i) {
+    var carg = block.args[i]
+    if(carg.count <= 0) {
+      continue
+    }
+    var re = new RegExp(carg.name, "g")
+    var ptrStr = ""
+    var arrNum = proc.arrayArgs.indexOf(i)
+    switch(proc.argTypes[i]) {
+      case "offset":
+        var offArgIndex = proc.offsetArgIndex.indexOf(i)
+        var offArg = proc.offsetArgs[offArgIndex]
+        arrNum = offArg.array
+        ptrStr = "+q" + offArgIndex
+      case "array":
+        ptrStr = "p" + arrNum + ptrStr
+        var localStr = "l" + i
+        var arrStr = "a" + arrNum
+        if(carg.count === 1) {
+          if(dtypes[arrNum] === "generic") {
+            if(carg.lvalue) {
+              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
+              code = code.replace(re, localStr)
+              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
+            } else {
+              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
+            }
+          } else {
+            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
+          }
+        } else if(dtypes[arrNum] === "generic") {
+          pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
+          code = code.replace(re, localStr)
+          if(carg.lvalue) {
+            post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
+          }
+        } else {
+          pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join(""))
+          code = code.replace(re, localStr)
+          if(carg.lvalue) {
+            post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
+          }
+        }
+      break
+      case "scalar":
+        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
+      break
+      case "index":
+        code = code.replace(re, "index")
+      break
+      case "shape":
+        code = code.replace(re, "shape")
+      break
+    }
+  }
+  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
+}
+
+function typeSummary(dtypes) {
+  var summary = new Array(dtypes.length)
+  var allEqual = true
+  for(var i=0; i<dtypes.length; ++i) {
+    var t = dtypes[i]
+    var digits = t.match(/\d+/)
+    if(!digits) {
+      digits = ""
+    } else {
+      digits = digits[0]
+    }
+    if(t.charAt(0) === 0) {
+      summary[i] = "u" + t.charAt(1) + digits
+    } else {
+      summary[i] = t.charAt(0) + digits
+    }
+    if(i > 0) {
+      allEqual = allEqual && summary[i] === summary[i-1]
+    }
+  }
+  if(allEqual) {
+    return summary[0]
+  }
+  return summary.join("")
+}
+
+//Generates a cwise operator
+function generateCWiseOp(proc, typesig) {
+
+  //Compute dimension
+  var dimension = typesig[1].length|0
+  var orders = new Array(proc.arrayArgs.length)
+  var dtypes = new Array(proc.arrayArgs.length)
+
+  //First create arguments for procedure
+  var arglist = ["SS"]
+  var code = ["'use strict'"]
+  var vars = []
+  
+  for(var j=0; j<dimension; ++j) {
+    vars.push(["s", j, "=SS[", j, "]"].join(""))
+  }
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    arglist.push("a"+i)
+    arglist.push("t"+i)
+    arglist.push("p"+i)
+    dtypes[i] = typesig[2*i]
+    orders[i] = typesig[2*i+1]
+    
+    for(var j=0; j<dimension; ++j) {
+      vars.push(["t",i,"p",j,"=t",i,"[",j,"]"].join(""))
+    }
+  }
+  for(var i=0; i<proc.scalarArgs.length; ++i) {
+    arglist.push("Y" + i)
+  }
+  if(proc.shapeArgs.length > 0) {
+    vars.push("shape=SS.slice(0)")
+  }
+  if(proc.indexArgs.length > 0) {
+    var zeros = new Array(dimension)
+    for(var i=0; i<dimension; ++i) {
+      zeros[i] = "0"
+    }
+    vars.push(["index=[", zeros.join(","), "]"].join(""))
+  }
+  for(var i=0; i<proc.offsetArgs.length; ++i) {
+    var off_arg = proc.offsetArgs[i]
+    var init_string = []
+    for(var j=0; j<off_arg.offset.length; ++j) {
+      if(off_arg.offset[j] === 0) {
+        continue
+      } else if(off_arg.offset[j] === 1) {
+        init_string.push(["t", off_arg.array, "p", j].join(""))      
+      } else {
+        init_string.push([off_arg.offset[j], "*t", off_arg.array, "p", j].join(""))
+      }
+    }
+    if(init_string.length === 0) {
+      vars.push("q" + i + "=0")
+    } else {
+      vars.push(["q", i, "=", init_string.join("+")].join(""))
+    }
+  }
+
+  //Prepare this variables
+  var thisVars = uniq([].concat(proc.pre.thisVars)
+                      .concat(proc.body.thisVars)
+                      .concat(proc.post.thisVars))
+  vars = vars.concat(thisVars)
+  code.push("var " + vars.join(","))
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    code.push("p"+i+"|=0")
+  }
+  
+  //Inline prelude
+  if(proc.pre.body.length > 3) {
+    code.push(processBlock(proc.pre, proc, dtypes))
+  }
+
+  //Process body
+  var body = processBlock(proc.body, proc, dtypes)
+  var matched = countMatches(orders)
+  if(matched < dimension) {
+    code.push(outerFill(matched, orders[0], proc, body))
+  } else {
+    code.push(innerFill(orders[0], proc, body))
+  }
+
+  //Inline epilog
+  if(proc.post.body.length > 3) {
+    code.push(processBlock(proc.post, proc, dtypes))
+  }
+  
+  if(proc.debug) {
+    console.log("Generated cwise routine for ", typesig, ":\n\n", code.join("\n"))
+  }
+  
+  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
+  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
+  return f()
+}
+module.exports = generateCWiseOp
+},{"uniq":92}],84:[function(require,module,exports){
 "use strict"
 
 function dupe_array(count, value, i) {
@@ -19173,295 +19463,7 @@ void function(global, undefined_, undefined){
 }((0, eval)('this'));
 
 })()
-},{}],65:[function(require,module,exports){
-"use strict"
-
-var uniq = require("uniq")
-
-function innerFill(order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , has_index = proc.indexArgs.length>0
-    , code = []
-    , vars = []
-    , idx=0, pidx=0, i, j
-  for(i=0; i<dimension; ++i) {
-    vars.push(["i",i,"=0"].join(""))
-  }
-  //Compute scan deltas
-  for(j=0; j<nargs; ++j) {
-    for(i=0; i<dimension; ++i) {
-      pidx = idx
-      idx = order[i]
-      if(i === 0) {
-        vars.push(["d",j,"s",i,"=t",j,"p",idx].join(""))
-      } else {
-        vars.push(["d",j,"s",i,"=(t",j,"p",idx,"-s",pidx,"*t",j,"p",pidx,")"].join(""))
-      }
-    }
-  }
-  code.push("var " + vars.join(","))
-  //Scan loop
-  for(i=dimension-1; i>=0; --i) {
-    idx = order[i]
-    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
-  }
-  //Push body of inner loop
-  code.push(body)
-  //Advance scan pointers
-  for(i=0; i<dimension; ++i) {
-    pidx = idx
-    idx = order[i]
-    for(j=0; j<nargs; ++j) {
-      code.push(["p",j,"+=d",j,"s",i].join(""))
-    }
-    if(has_index) {
-      if(i > 0) {
-        code.push(["index[",pidx,"]-=s",pidx].join(""))
-      }
-      code.push(["++index[",idx,"]"].join(""))
-    }
-    code.push("}")
-  }
-  return code.join("\n")
-}
-
-function outerFill(matched, order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , blockSize = proc.blockSize
-    , has_index = proc.indexArgs.length > 0
-    , code = []
-  for(var i=0; i<nargs; ++i) {
-    code.push(["var offset",i,"=p",i].join(""))
-  }
-  //Generate matched loops
-  for(var i=matched; i<dimension; ++i) {
-    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join(""))
-    code.push(["if(j",i,"<",blockSize,"){"].join(""))
-    code.push(["s",order[i],"=j",i].join(""))
-    code.push(["j",i,"=0"].join(""))
-    code.push(["}else{s",order[i],"=",blockSize].join(""))
-    code.push(["j",i,"-=",blockSize,"}"].join(""))
-    if(has_index) {
-      code.push(["index[",order[i],"]=j",i].join(""))
-    }
-  }
-  for(var i=0; i<nargs; ++i) {
-    var indexStr = ["offset"+i]
-    for(var j=matched; j<dimension; ++j) {
-      indexStr.push(["j",j,"*t",i,"p",order[j]].join(""))
-    }
-    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
-  }
-  code.push(innerFill(order, proc, body))
-  for(var i=matched; i<dimension; ++i) {
-    code.push("}")
-  }
-  return code.join("\n")
-}
-
-//Count the number of compatible inner orders
-function countMatches(orders) {
-  var matched = 0, dimension = orders[0].length
-  while(matched < dimension) {
-    for(var j=1; j<orders.length; ++j) {
-      if(orders[j][matched] !== orders[0][matched]) {
-        return matched
-      }
-    }
-    ++matched
-  }
-  return matched
-}
-
-//Processes a block according to the given data types
-function processBlock(block, proc, dtypes) {
-  var code = block.body
-  var pre = []
-  var post = []
-  for(var i=0; i<block.args.length; ++i) {
-    var carg = block.args[i]
-    if(carg.count <= 0) {
-      continue
-    }
-    var re = new RegExp(carg.name, "g")
-    var ptrStr = ""
-    var arrNum = proc.arrayArgs.indexOf(i)
-    switch(proc.argTypes[i]) {
-      case "offset":
-        var offArgIndex = proc.offsetArgIndex.indexOf(i)
-        var offArg = proc.offsetArgs[offArgIndex]
-        arrNum = offArg.array
-        ptrStr = "+q" + offArgIndex
-      case "array":
-        ptrStr = "p" + arrNum + ptrStr
-        var localStr = "l" + i
-        var arrStr = "a" + arrNum
-        if(carg.count === 1) {
-          if(dtypes[arrNum] === "generic") {
-            if(carg.lvalue) {
-              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
-              code = code.replace(re, localStr)
-              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-            } else {
-              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
-            }
-          } else {
-            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
-          }
-        } else if(dtypes[arrNum] === "generic") {
-          pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
-          code = code.replace(re, localStr)
-          if(carg.lvalue) {
-            post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-          }
-        } else {
-          pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join(""))
-          code = code.replace(re, localStr)
-          if(carg.lvalue) {
-            post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
-          }
-        }
-      break
-      case "scalar":
-        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
-      break
-      case "index":
-        code = code.replace(re, "index")
-      break
-      case "shape":
-        code = code.replace(re, "shape")
-      break
-    }
-  }
-  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
-}
-
-function typeSummary(dtypes) {
-  var summary = new Array(dtypes.length)
-  var allEqual = true
-  for(var i=0; i<dtypes.length; ++i) {
-    var t = dtypes[i]
-    var digits = t.match(/\d+/)
-    if(!digits) {
-      digits = ""
-    } else {
-      digits = digits[0]
-    }
-    if(t.charAt(0) === 0) {
-      summary[i] = "u" + t.charAt(1) + digits
-    } else {
-      summary[i] = t.charAt(0) + digits
-    }
-    if(i > 0) {
-      allEqual = allEqual && summary[i] === summary[i-1]
-    }
-  }
-  if(allEqual) {
-    return summary[0]
-  }
-  return summary.join("")
-}
-
-//Generates a cwise operator
-function generateCWiseOp(proc, typesig) {
-
-  //Compute dimension
-  var dimension = typesig[1].length|0
-  var orders = new Array(proc.arrayArgs.length)
-  var dtypes = new Array(proc.arrayArgs.length)
-
-  //First create arguments for procedure
-  var arglist = ["SS"]
-  var code = ["'use strict'"]
-  var vars = []
-  
-  for(var j=0; j<dimension; ++j) {
-    vars.push(["s", j, "=SS[", j, "]"].join(""))
-  }
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    arglist.push("a"+i)
-    arglist.push("t"+i)
-    arglist.push("p"+i)
-    dtypes[i] = typesig[2*i]
-    orders[i] = typesig[2*i+1]
-    
-    for(var j=0; j<dimension; ++j) {
-      vars.push(["t",i,"p",j,"=t",i,"[",j,"]"].join(""))
-    }
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    arglist.push("Y" + i)
-  }
-  if(proc.shapeArgs.length > 0) {
-    vars.push("shape=SS.slice(0)")
-  }
-  if(proc.indexArgs.length > 0) {
-    var zeros = new Array(dimension)
-    for(var i=0; i<dimension; ++i) {
-      zeros[i] = "0"
-    }
-    vars.push(["index=[", zeros.join(","), "]"].join(""))
-  }
-  for(var i=0; i<proc.offsetArgs.length; ++i) {
-    var off_arg = proc.offsetArgs[i]
-    var init_string = []
-    for(var j=0; j<off_arg.offset.length; ++j) {
-      if(off_arg.offset[j] === 0) {
-        continue
-      } else if(off_arg.offset[j] === 1) {
-        init_string.push(["t", off_arg.array, "p", j].join(""))      
-      } else {
-        init_string.push([off_arg.offset[j], "*t", off_arg.array, "p", j].join(""))
-      }
-    }
-    if(init_string.length === 0) {
-      vars.push("q" + i + "=0")
-    } else {
-      vars.push(["q", i, "=", init_string.join("+")].join(""))
-    }
-  }
-
-  //Prepare this variables
-  var thisVars = uniq([].concat(proc.pre.thisVars)
-                      .concat(proc.body.thisVars)
-                      .concat(proc.post.thisVars))
-  vars = vars.concat(thisVars)
-  code.push("var " + vars.join(","))
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    code.push("p"+i+"|=0")
-  }
-  
-  //Inline prelude
-  if(proc.pre.body.length > 3) {
-    code.push(processBlock(proc.pre, proc, dtypes))
-  }
-
-  //Process body
-  var body = processBlock(proc.body, proc, dtypes)
-  var matched = countMatches(orders)
-  if(matched < dimension) {
-    code.push(outerFill(matched, orders[0], proc, body))
-  } else {
-    code.push(innerFill(orders[0], proc, body))
-  }
-
-  //Inline epilog
-  if(proc.post.body.length > 3) {
-    code.push(processBlock(proc.post, proc, dtypes))
-  }
-  
-  if(proc.debug) {
-    console.log("Generated cwise routine for ", typesig, ":\n\n", code.join("\n"))
-  }
-  
-  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
-  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
-  return f()
-}
-module.exports = generateCWiseOp
-},{"uniq":92}],66:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 "use strict"
 
 var uniq = require("uniq")
@@ -21372,7 +21374,7 @@ function createSurfaceExtractor(args) {
     order,
     typesig)
 }
-},{"typedarray-pool":33}],105:[function(require,module,exports){
+},{"typedarray-pool":32}],105:[function(require,module,exports){
 "use strict"
 
 module.exports = simplifyPolygon
@@ -21644,7 +21646,7 @@ function simplifyPolygon(cells, positions, minArea) {
     edges: ncells
   }
 }
-},{"simplicial-complex":108,"robust-orientation":109}],106:[function(require,module,exports){
+},{"robust-orientation":108,"simplicial-complex":109}],106:[function(require,module,exports){
 "use strict"
 
 module.exports = planarGraphToPolyline
@@ -23118,7 +23120,7 @@ function generateCWiseOp(proc, typesig) {
 module.exports = generateCWiseOp
 },{"uniq":129}],122:[function(require,module,exports){
 module.exports={"version": "1.3.3"}
-},{}],109:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -23586,7 +23588,7 @@ function unrank(n, r, p) {
 exports.rank = rank
 exports.unrank = unrank
 
-},{"invert-permutation":121,"typedarray-pool":33}],101:[function(require,module,exports){
+},{"invert-permutation":121,"typedarray-pool":32}],101:[function(require,module,exports){
 "use strict"
 
 module.exports = permutationSign
@@ -23638,66 +23640,7 @@ function permutationSign(p) {
     return sgn
   }
 }
-},{"typedarray-pool":33}],135:[function(require,module,exports){
-"use strict"; "use restrict";
-
-module.exports = UnionFind;
-
-function UnionFind(count) {
-  this.roots = new Array(count);
-  this.ranks = new Array(count);
-  
-  for(var i=0; i<count; ++i) {
-    this.roots[i] = i;
-    this.ranks[i] = 0;
-  }
-}
-
-var proto = UnionFind.prototype
-
-Object.defineProperty(proto, "length", {
-  "get": function() {
-    return this.roots.length
-  }
-})
-
-proto.makeSet = function() {
-  var n = this.roots.length;
-  this.roots.push(n);
-  this.ranks.push(0);
-  return n;
-}
-
-proto.find = function(x) {
-  var roots = this.roots;
-  while(roots[x] !== x) {
-    var y = roots[x];
-    roots[x] = roots[y];
-    x = y;
-  }
-  return x;
-}
-
-proto.link = function(x, y) {
-  var xr = this.find(x)
-    , yr = this.find(y);
-  if(xr === yr) {
-    return;
-  }
-  var ranks = this.ranks
-    , roots = this.roots
-    , xd    = ranks[xr]
-    , yd    = ranks[yr];
-  if(xd < yd) {
-    roots[xr] = yr;
-  } else if(yd < xd) {
-    roots[yr] = xr;
-  } else {
-    roots[yr] = xr;
-    ++ranks[xr];
-  }
-}
-},{}],130:[function(require,module,exports){
+},{"typedarray-pool":32}],130:[function(require,module,exports){
 "use strict"
 
 module.exports = twoProduct
@@ -24044,6 +23987,65 @@ function robustSubtract(e, f) {
   }
   g.length = count
   return g
+}
+},{}],135:[function(require,module,exports){
+"use strict"; "use restrict";
+
+module.exports = UnionFind;
+
+function UnionFind(count) {
+  this.roots = new Array(count);
+  this.ranks = new Array(count);
+  
+  for(var i=0; i<count; ++i) {
+    this.roots[i] = i;
+    this.ranks[i] = 0;
+  }
+}
+
+var proto = UnionFind.prototype
+
+Object.defineProperty(proto, "length", {
+  "get": function() {
+    return this.roots.length
+  }
+})
+
+proto.makeSet = function() {
+  var n = this.roots.length;
+  this.roots.push(n);
+  this.ranks.push(0);
+  return n;
+}
+
+proto.find = function(x) {
+  var roots = this.roots;
+  while(roots[x] !== x) {
+    var y = roots[x];
+    roots[x] = roots[y];
+    x = y;
+  }
+  return x;
+}
+
+proto.link = function(x, y) {
+  var xr = this.find(x)
+    , yr = this.find(y);
+  if(xr === yr) {
+    return;
+  }
+  var ranks = this.ranks
+    , roots = this.roots
+    , xd    = ranks[xr]
+    , yd    = ranks[yr];
+  if(xd < yd) {
+    roots[xr] = yr;
+  } else if(yd < xd) {
+    roots[yr] = xr;
+  } else {
+    roots[yr] = xr;
+    ++ranks[xr];
+  }
 }
 },{}],110:[function(require,module,exports){
 "use strict"
@@ -25240,7 +25242,291 @@ SweepContext.prototype.meshClean = function(triangle) {
 
 module.exports = SweepContext;
 
-},{"./pointerror":123,"./point":124,"./triangle":125,"./sweep":127,"./advancingfront":139}],127:[function(require,module,exports){
+},{"./pointerror":123,"./point":124,"./triangle":125,"./sweep":127,"./advancingfront":139}],118:[function(require,module,exports){
+"use strict"
+
+var uniq = require("uniq")
+
+function innerFill(order, proc, body) {
+  var dimension = order.length
+    , nargs = proc.arrayArgs.length
+    , has_index = proc.indexArgs.length>0
+    , code = []
+    , vars = []
+    , idx=0, pidx=0, i, j
+  for(i=0; i<dimension; ++i) {
+    vars.push(["i",i,"=0"].join(""))
+  }
+  //Compute scan deltas
+  for(j=0; j<nargs; ++j) {
+    for(i=0; i<dimension; ++i) {
+      pidx = idx
+      idx = order[i]
+      if(i === 0) {
+        vars.push(["d",j,"s",i,"=t",j,"[",idx,"]"].join(""))
+      } else {
+        vars.push(["d",j,"s",i,"=(t",j,"[",idx,"]-s",pidx,"*t",j,"[",pidx,"])"].join(""))
+      }
+    }
+  }
+  code.push("var " + vars.join(","))
+  //Scan loop
+  for(i=dimension-1; i>=0; --i) {
+    idx = order[i]
+    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
+  }
+  //Push body of inner loop
+  code.push(body)
+  //Advance scan pointers
+  for(i=0; i<dimension; ++i) {
+    pidx = idx
+    idx = order[i]
+    for(j=0; j<nargs; ++j) {
+      code.push(["p",j,"+=d",j,"s",i].join(""))
+    }
+    if(has_index) {
+      if(i > 0) {
+        code.push(["index[",pidx,"]-=s",pidx].join(""))
+      }
+      code.push(["++index[",idx,"]"].join(""))
+    }
+    code.push("}")
+  }
+  return code.join("\n")
+}
+
+function outerFill(matched, order, proc, body) {
+  var dimension = order.length
+    , nargs = proc.arrayArgs.length
+    , blockSize = proc.blockSize
+    , has_index = proc.indexArgs.length > 0
+    , code = []
+  for(var i=0; i<nargs; ++i) {
+    code.push(["var offset",i,"=p",i].join(""))
+  }
+  //Generate matched loops
+  for(var i=matched; i<dimension; ++i) {
+    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join(""))
+    code.push(["if(j",i,"<",blockSize,"){"].join(""))
+    code.push(["s",order[i],"=j",i].join(""))
+    code.push(["j",i,"=0"].join(""))
+    code.push(["}else{s",order[i],"=",blockSize].join(""))
+    code.push(["j",i,"-=",blockSize,"}"].join(""))
+    if(has_index) {
+      code.push(["index[",order[i],"]=j",i].join(""))
+    }
+  }
+  for(var i=0; i<nargs; ++i) {
+    var indexStr = ["offset"+i]
+    for(var j=matched; j<dimension; ++j) {
+      indexStr.push(["j",j,"*t",i,"[",order[j],"]"].join(""))
+    }
+    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
+  }
+  code.push(innerFill(order, proc, body))
+  for(var i=matched; i<dimension; ++i) {
+    code.push("}")
+  }
+  return code.join("\n")
+}
+
+//Count the number of compatible inner orders
+function countMatches(orders) {
+  var matched = 0, dimension = orders[0].length
+  while(matched < dimension) {
+    for(var j=1; j<orders.length; ++j) {
+      if(orders[j][matched] !== orders[0][matched]) {
+        return matched
+      }
+    }
+    ++matched
+  }
+  return matched
+}
+
+//Processes a block according to the given data types
+function processBlock(block, proc, dtypes) {
+  var code = block.body
+  var pre = []
+  var post = []
+  for(var i=0; i<block.args.length; ++i) {
+    var carg = block.args[i]
+    if(carg.count <= 0) {
+      continue
+    }
+    var re = new RegExp(carg.name, "g")
+    var ptrStr = ""
+    var arrNum = proc.arrayArgs.indexOf(i)
+    switch(proc.argTypes[i]) {
+      case "offset":
+        var offArgIndex = proc.offsetArgIndex.indexOf(i)
+        var offArg = proc.offsetArgs[offArgIndex]
+        arrNum = offArg.array
+        ptrStr = "+q" + offArgIndex
+      case "array":
+        ptrStr = "p" + arrNum + ptrStr
+        var localStr = "l" + i
+        var arrStr = "a" + arrNum
+        if(carg.count === 1) {
+          if(dtypes[arrNum] === "generic") {
+            if(carg.lvalue) {
+              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
+              code = code.replace(re, localStr)
+              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
+            } else {
+              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
+            }
+          } else {
+            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
+          }
+        } else if(dtypes[arrNum] === "generic") {
+          pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
+          code = code.replace(re, localStr)
+          if(carg.lvalue) {
+            post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
+          }
+        } else {
+          pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join(""))
+          code = code.replace(re, localStr)
+          if(carg.lvalue) {
+            post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
+          }
+        }
+      break
+      case "scalar":
+        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
+      break
+      case "index":
+        code = code.replace(re, "index")
+      break
+      case "shape":
+        code = code.replace(re, "shape")
+      break
+    }
+  }
+  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
+}
+
+function typeSummary(dtypes) {
+  var summary = new Array(dtypes.length)
+  var allEqual = true
+  for(var i=0; i<dtypes.length; ++i) {
+    var t = dtypes[i]
+    var digits = t.match(/\d+/)
+    if(!digits) {
+      digits = ""
+    } else {
+      digits = digits[0]
+    }
+    if(t.charAt(0) === 0) {
+      summary[i] = "u" + t.charAt(1) + digits
+    } else {
+      summary[i] = t.charAt(0) + digits
+    }
+    if(i > 0) {
+      allEqual = allEqual && summary[i] === summary[i-1]
+    }
+  }
+  if(allEqual) {
+    return summary[0]
+  }
+  return summary.join("")
+}
+
+//Generates a cwise operator
+function generateCWiseOp(proc, typesig) {
+
+  //Compute dimension
+  var dimension = typesig[1].length|0
+  var orders = new Array(proc.arrayArgs.length)
+  var dtypes = new Array(proc.arrayArgs.length)
+
+  //First create arguments for procedure
+  var arglist = ["SS"]
+  var code = ["'use strict'"]
+  var vars = []
+  
+  for(var j=0; j<dimension; ++j) {
+    vars.push(["s", j, "=SS[", j, "]"].join(""))
+  }
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    arglist.push("a"+i)
+    arglist.push("t"+i)
+    arglist.push("p"+i)
+    dtypes[i] = typesig[2*i]
+    orders[i] = typesig[2*i+1]
+  }
+  for(var i=0; i<proc.scalarArgs.length; ++i) {
+    arglist.push("Y" + i)
+  }
+  if(proc.shapeArgs.length > 0) {
+    vars.push("shape=SS.slice(0)")
+  }
+  if(proc.indexArgs.length > 0) {
+    var zeros = new Array(dimension)
+    for(var i=0; i<dimension; ++i) {
+      zeros[i] = "0"
+    }
+    vars.push(["index=[", zeros.join(","), "]"].join(""))
+  }
+  for(var i=0; i<proc.offsetArgs.length; ++i) {
+    var off_arg = proc.offsetArgs[i]
+    var init_string = []
+    for(var j=0; j<off_arg.offset.length; ++j) {
+      if(off_arg.offset[j] === 0) {
+        continue
+      } else if(off_arg.offset[j] === 1) {
+        init_string.push(["t", off_arg.array, "[", j, "]"].join(""))      
+      } else {
+        init_string.push([off_arg.offset[j], "*t", off_arg.array, "[", j, "]"].join(""))
+      }
+    }
+    if(init_string.length === 0) {
+      vars.push("q" + i + "=0")
+    } else {
+      vars.push(["q", i, "=(", init_string.join("+"),")|0"].join(""))
+    }
+  }
+
+  //Prepare this variables
+  var thisVars = uniq([].concat(proc.pre.thisVars)
+                      .concat(proc.body.thisVars)
+                      .concat(proc.post.thisVars))
+  vars = vars.concat(thisVars)
+  code.push("var " + vars.join(","))
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    code.push("p"+i+"|=0")
+  }
+  
+  //Inline prelude
+  if(proc.pre.body.length > 3) {
+    code.push(processBlock(proc.pre, proc, dtypes))
+  }
+
+  //Process body
+  var body = processBlock(proc.body, proc, dtypes)
+  var matched = countMatches(orders)
+  if(matched < dimension) {
+    code.push(outerFill(matched, orders[0], proc, body))
+  } else {
+    code.push(innerFill(orders[0], proc, body))
+  }
+
+  //Inline epilog
+  if(proc.post.body.length > 3) {
+    code.push(processBlock(proc.post, proc, dtypes))
+  }
+  
+  if(proc.debug) {
+    console.log("Generated cwise routine for ", typesig, ":\n\n", code.join("\n"))
+  }
+  
+  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
+  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
+  return f()
+}
+module.exports = generateCWiseOp
+},{"uniq":140}],127:[function(require,module,exports){
 (function(){/*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -26094,291 +26380,7 @@ function flipScanEdgeEvent(tcx, ep, eq, flip_triangle, t, p) {
 exports.triangulate = triangulate;
 
 })()
-},{"./pointerror":123,"./triangle":125,"./advancingfront":139,"./utils":140}],118:[function(require,module,exports){
-"use strict"
-
-var uniq = require("uniq")
-
-function innerFill(order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , has_index = proc.indexArgs.length>0
-    , code = []
-    , vars = []
-    , idx=0, pidx=0, i, j
-  for(i=0; i<dimension; ++i) {
-    vars.push(["i",i,"=0"].join(""))
-  }
-  //Compute scan deltas
-  for(j=0; j<nargs; ++j) {
-    for(i=0; i<dimension; ++i) {
-      pidx = idx
-      idx = order[i]
-      if(i === 0) {
-        vars.push(["d",j,"s",i,"=t",j,"[",idx,"]"].join(""))
-      } else {
-        vars.push(["d",j,"s",i,"=(t",j,"[",idx,"]-s",pidx,"*t",j,"[",pidx,"])"].join(""))
-      }
-    }
-  }
-  code.push("var " + vars.join(","))
-  //Scan loop
-  for(i=dimension-1; i>=0; --i) {
-    idx = order[i]
-    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
-  }
-  //Push body of inner loop
-  code.push(body)
-  //Advance scan pointers
-  for(i=0; i<dimension; ++i) {
-    pidx = idx
-    idx = order[i]
-    for(j=0; j<nargs; ++j) {
-      code.push(["p",j,"+=d",j,"s",i].join(""))
-    }
-    if(has_index) {
-      if(i > 0) {
-        code.push(["index[",pidx,"]-=s",pidx].join(""))
-      }
-      code.push(["++index[",idx,"]"].join(""))
-    }
-    code.push("}")
-  }
-  return code.join("\n")
-}
-
-function outerFill(matched, order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , blockSize = proc.blockSize
-    , has_index = proc.indexArgs.length > 0
-    , code = []
-  for(var i=0; i<nargs; ++i) {
-    code.push(["var offset",i,"=p",i].join(""))
-  }
-  //Generate matched loops
-  for(var i=matched; i<dimension; ++i) {
-    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join(""))
-    code.push(["if(j",i,"<",blockSize,"){"].join(""))
-    code.push(["s",order[i],"=j",i].join(""))
-    code.push(["j",i,"=0"].join(""))
-    code.push(["}else{s",order[i],"=",blockSize].join(""))
-    code.push(["j",i,"-=",blockSize,"}"].join(""))
-    if(has_index) {
-      code.push(["index[",order[i],"]=j",i].join(""))
-    }
-  }
-  for(var i=0; i<nargs; ++i) {
-    var indexStr = ["offset"+i]
-    for(var j=matched; j<dimension; ++j) {
-      indexStr.push(["j",j,"*t",i,"[",order[j],"]"].join(""))
-    }
-    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
-  }
-  code.push(innerFill(order, proc, body))
-  for(var i=matched; i<dimension; ++i) {
-    code.push("}")
-  }
-  return code.join("\n")
-}
-
-//Count the number of compatible inner orders
-function countMatches(orders) {
-  var matched = 0, dimension = orders[0].length
-  while(matched < dimension) {
-    for(var j=1; j<orders.length; ++j) {
-      if(orders[j][matched] !== orders[0][matched]) {
-        return matched
-      }
-    }
-    ++matched
-  }
-  return matched
-}
-
-//Processes a block according to the given data types
-function processBlock(block, proc, dtypes) {
-  var code = block.body
-  var pre = []
-  var post = []
-  for(var i=0; i<block.args.length; ++i) {
-    var carg = block.args[i]
-    if(carg.count <= 0) {
-      continue
-    }
-    var re = new RegExp(carg.name, "g")
-    var ptrStr = ""
-    var arrNum = proc.arrayArgs.indexOf(i)
-    switch(proc.argTypes[i]) {
-      case "offset":
-        var offArgIndex = proc.offsetArgIndex.indexOf(i)
-        var offArg = proc.offsetArgs[offArgIndex]
-        arrNum = offArg.array
-        ptrStr = "+q" + offArgIndex
-      case "array":
-        ptrStr = "p" + arrNum + ptrStr
-        var localStr = "l" + i
-        var arrStr = "a" + arrNum
-        if(carg.count === 1) {
-          if(dtypes[arrNum] === "generic") {
-            if(carg.lvalue) {
-              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
-              code = code.replace(re, localStr)
-              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-            } else {
-              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
-            }
-          } else {
-            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
-          }
-        } else if(dtypes[arrNum] === "generic") {
-          pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
-          code = code.replace(re, localStr)
-          if(carg.lvalue) {
-            post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-          }
-        } else {
-          pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join(""))
-          code = code.replace(re, localStr)
-          if(carg.lvalue) {
-            post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
-          }
-        }
-      break
-      case "scalar":
-        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
-      break
-      case "index":
-        code = code.replace(re, "index")
-      break
-      case "shape":
-        code = code.replace(re, "shape")
-      break
-    }
-  }
-  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
-}
-
-function typeSummary(dtypes) {
-  var summary = new Array(dtypes.length)
-  var allEqual = true
-  for(var i=0; i<dtypes.length; ++i) {
-    var t = dtypes[i]
-    var digits = t.match(/\d+/)
-    if(!digits) {
-      digits = ""
-    } else {
-      digits = digits[0]
-    }
-    if(t.charAt(0) === 0) {
-      summary[i] = "u" + t.charAt(1) + digits
-    } else {
-      summary[i] = t.charAt(0) + digits
-    }
-    if(i > 0) {
-      allEqual = allEqual && summary[i] === summary[i-1]
-    }
-  }
-  if(allEqual) {
-    return summary[0]
-  }
-  return summary.join("")
-}
-
-//Generates a cwise operator
-function generateCWiseOp(proc, typesig) {
-
-  //Compute dimension
-  var dimension = typesig[1].length|0
-  var orders = new Array(proc.arrayArgs.length)
-  var dtypes = new Array(proc.arrayArgs.length)
-
-  //First create arguments for procedure
-  var arglist = ["SS"]
-  var code = ["'use strict'"]
-  var vars = []
-  
-  for(var j=0; j<dimension; ++j) {
-    vars.push(["s", j, "=SS[", j, "]"].join(""))
-  }
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    arglist.push("a"+i)
-    arglist.push("t"+i)
-    arglist.push("p"+i)
-    dtypes[i] = typesig[2*i]
-    orders[i] = typesig[2*i+1]
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    arglist.push("Y" + i)
-  }
-  if(proc.shapeArgs.length > 0) {
-    vars.push("shape=SS.slice(0)")
-  }
-  if(proc.indexArgs.length > 0) {
-    var zeros = new Array(dimension)
-    for(var i=0; i<dimension; ++i) {
-      zeros[i] = "0"
-    }
-    vars.push(["index=[", zeros.join(","), "]"].join(""))
-  }
-  for(var i=0; i<proc.offsetArgs.length; ++i) {
-    var off_arg = proc.offsetArgs[i]
-    var init_string = []
-    for(var j=0; j<off_arg.offset.length; ++j) {
-      if(off_arg.offset[j] === 0) {
-        continue
-      } else if(off_arg.offset[j] === 1) {
-        init_string.push(["t", off_arg.array, "[", j, "]"].join(""))      
-      } else {
-        init_string.push([off_arg.offset[j], "*t", off_arg.array, "[", j, "]"].join(""))
-      }
-    }
-    if(init_string.length === 0) {
-      vars.push("q" + i + "=0")
-    } else {
-      vars.push(["q", i, "=(", init_string.join("+"),")|0"].join(""))
-    }
-  }
-
-  //Prepare this variables
-  var thisVars = uniq([].concat(proc.pre.thisVars)
-                      .concat(proc.body.thisVars)
-                      .concat(proc.post.thisVars))
-  vars = vars.concat(thisVars)
-  code.push("var " + vars.join(","))
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    code.push("p"+i+"|=0")
-  }
-  
-  //Inline prelude
-  if(proc.pre.body.length > 3) {
-    code.push(processBlock(proc.pre, proc, dtypes))
-  }
-
-  //Process body
-  var body = processBlock(proc.body, proc, dtypes)
-  var matched = countMatches(orders)
-  if(matched < dimension) {
-    code.push(outerFill(matched, orders[0], proc, body))
-  } else {
-    code.push(innerFill(orders[0], proc, body))
-  }
-
-  //Inline epilog
-  if(proc.post.body.length > 3) {
-    code.push(processBlock(proc.post, proc, dtypes))
-  }
-  
-  if(proc.debug) {
-    console.log("Generated cwise routine for ", typesig, ":\n\n", code.join("\n"))
-  }
-  
-  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
-  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
-  return f()
-}
-module.exports = generateCWiseOp
-},{"uniq":141}],128:[function(require,module,exports){
+},{"./pointerror":123,"./triangle":125,"./advancingfront":139,"./utils":141}],128:[function(require,module,exports){
 "use strict"
 
 var compile = require("./compile.js")
@@ -26642,6 +26644,64 @@ module.exports.Node = Node;
 
 
 },{}],140:[function(require,module,exports){
+"use strict"
+
+function unique_pred(list, compare) {
+  var ptr = 1
+    , len = list.length
+    , a=list[0], b=list[0]
+  for(var i=1; i<len; ++i) {
+    b = a
+    a = list[i]
+    if(compare(a, b)) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      list[ptr++] = a
+    }
+  }
+  list.length = ptr
+  return list
+}
+
+function unique_eq(list) {
+  var ptr = 1
+    , len = list.length
+    , a=list[0], b = list[0]
+  for(var i=1; i<len; ++i, b=a) {
+    b = a
+    a = list[i]
+    if(a !== b) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      list[ptr++] = a
+    }
+  }
+  list.length = ptr
+  return list
+}
+
+function unique(list, compare, sorted) {
+  if(list.length === 0) {
+    return []
+  }
+  if(compare) {
+    if(!sorted) {
+      list.sort(compare)
+    }
+    return unique_pred(list, compare)
+  }
+  if(!sorted) {
+    list.sort()
+  }
+  return unique_eq(list)
+}
+
+module.exports = unique
+},{}],141:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -26724,65 +26784,7 @@ module.exports = {
     inScanArea: inScanArea
 };
 
-},{}],141:[function(require,module,exports){
-"use strict"
-
-function unique_pred(list, compare) {
-  var ptr = 1
-    , len = list.length
-    , a=list[0], b=list[0]
-  for(var i=1; i<len; ++i) {
-    b = a
-    a = list[i]
-    if(compare(a, b)) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      list[ptr++] = a
-    }
-  }
-  list.length = ptr
-  return list
-}
-
-function unique_eq(list) {
-  var ptr = 1
-    , len = list.length
-    , a=list[0], b = list[0]
-  for(var i=1; i<len; ++i, b=a) {
-    b = a
-    a = list[i]
-    if(a !== b) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      list[ptr++] = a
-    }
-  }
-  list.length = ptr
-  return list
-}
-
-function unique(list, compare, sorted) {
-  if(list.length === 0) {
-    return []
-  }
-  if(compare) {
-    if(!sorted) {
-      list.sort(compare)
-    }
-    return unique_pred(list, compare)
-  }
-  if(!sorted) {
-    list.sort()
-  }
-  return unique_eq(list)
-}
-
-module.exports = unique
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 "use strict"; "use restrict";
 
 var bits      = require("bit-twiddle")
