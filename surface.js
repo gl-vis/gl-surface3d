@@ -757,7 +757,7 @@ proto.update = function(params) {
       if(nl < 1e-6) {
         nl = 0.0
       } else {
-        nl = -1.0 / Math.sqrt(nl)
+        nl = 1.0 / Math.sqrt(nl)
       }
 
       normals.set(i,j,0, nx*nl)

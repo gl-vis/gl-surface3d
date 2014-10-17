@@ -23,6 +23,6 @@ void main() {
   //Lighting geometry parameters
   lightDirection = lightPosition - worldCoordinate;
   eyeDirection   = eyePosition - worldCoordinate;
-  float norient = 2.0 - step(0.0, dot(eyeDirection, normal));
-  surfaceNormal  = -normal * norient;
+  float norient = 2.0*step(0.0, dot(eyeDirection, normal)) - 1.0;
+  surfaceNormal  = normal * norient;
 }
