@@ -268,10 +268,6 @@ proto.draw = function(params) {
     uniforms.lightPosition[i] = s / w
   }
 
-  console.log(uniforms.lightPosition)
-
-
-
   var projectData = computeProjectionData(uniforms, this)
 
   if(projectData.showSurface) {
@@ -725,13 +721,13 @@ proto.update = function(params) {
     for(var i=0; i<2; ++i) {
       var offset = [0,0]
       offset[i] = 1
-      this._field[i] = ndarray(this._field[i].data, shape, offset, 0)
+      this._field[i] = ndarray(this._field[i].data, [shape[0]+2, shape[1]+2], offset, 0)
     }
     for(var j=0; j<shape[0]; ++j) {
-      this._field[0].set(j,0,j)
+      this._field[0].set(j+1,0,j)
     }
     for(var j=0; j<shape[1]; ++j) {
-      this._field[1].set(0,j,j)
+      this._field[1].set(0,j+1,j)
     }
   }
 
