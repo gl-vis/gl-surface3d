@@ -10,6 +10,7 @@ varying float value;
 varying float kill;
 varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
+varying vec3 lightDirection, eyeDirection, surfaceNormal;
 
 void main() {
   vec3 dataCoordinate = permutation * vec3(uv.xy, height);
@@ -23,4 +24,9 @@ void main() {
   kill = -1.0;
   worldCoordinate = dataCoordinate;
   planeCoordinate = uv.zw;
+
+  //Don't do lighting for contours
+  surfaceNormal   = vec3(1,0,0);
+  eyeDirection    = vec3(0,1,0);
+  lightDirection  = vec3(0,0,1);
 }

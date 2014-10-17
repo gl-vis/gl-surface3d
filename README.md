@@ -99,6 +99,15 @@ Draws the surface.  Accepts the following parameters
 ### `surface.dispose()`
 Destroys the surface, releases all associated WebGL resources
 
+### `surface.bounds`
+A pair of 3D arrays representing the lower/upper bounding box for the surface plot.
+
+### `surface.clipBounds`
+
+A pair of arrays which bound the coordinates of the surface plot in 3D.
+
+## Interactivity/picking
+
 ### `surface.drawPick(camera)`
 Draws the surface for point picking mode
 
@@ -113,16 +122,9 @@ Test if the given selection is contained in the surface.  If true, returns an ob
 * `levels` the closest levels to the selection
 
 ### `surface.dynamic(levels)`
-Dynamically draws level lines.  Set to null/NaN to clear levels.
+Toggles drawing level isolines and their projections.
 
 * `levels` is an array of 3 arrays representing the x/y/z levels to draw
-
-### `surface.bounds`
-A pair of 3D arrays representing the lower/upper bounding box for the surface plot.
-
-### `surface.clipBounds`
-
-A pair of arrays which bound the coordinates of the surface plot in 3D.
 
 ## License
 MIT License.
