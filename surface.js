@@ -723,23 +723,27 @@ proto.update = function(params) {
       offset[i] = 1
       this._field[i] = ndarray(this._field[i].data, [shape[0]+2, shape[1]+2], offset, 0)
     }
+    this._field[0].set(0,0,0)
     for(var j=0; j<shape[0]; ++j) {
       this._field[0].set(j+1,0,j)
     }
+    this._field[0].set(shape[0]+1,0,shape[0]-1)
+    this._field[1].set(0,0,0)
     for(var j=0; j<shape[1]; ++j) {
       this._field[1].set(0,j+1,j)
     }
+    this._field[1].set(0,shape[1]+1, shape[1]-1)
   }
 
   var fields = this._field
 
   //Compute surface normals
   var fieldSize = fields[2].size
-  var dfields = ndarray(pool.mallocFloat(field.size*3*2), [3, shape[0]+2, shape[1]+2, 2])
+  var dfields = ndarray(pool.mallocFloat(fields[2].size*3*2), [3, shape[0]+2, shape[1]+2, 2])
   for(var i=0; i<3; ++i) {
-    gradient(dfields.pick(i), fields[i])
+    gradient(dfields.pick(i), fields[i], 'mirror')
   }
-  var normals = ndarray(pool.mallocFloat(field.size*3), [shape[0]+2, shape[1]+2, 3])
+  var normals = ndarray(pool.mallocFloat(fields[2].size*3), [shape[0]+2, shape[1]+2, 3])
   for(var i=0; i<shape[0]+2; ++i) {
     for(var j=0; j<shape[1]+2; ++j) {
       var dxdu = dfields.get(0, i, j, 0)
@@ -771,7 +775,7 @@ proto.update = function(params) {
   var lo = [ Infinity, Infinity, Infinity]
   var hi = [-Infinity,-Infinity,-Infinity]
   var count   = (shape[0]-1) * (shape[1]-1) * 6
-  var tverts  = pool.mallocFloat(9*count)
+  var tverts  = pool.mallocFloat(bits.nextPow2(9*count))
   var tptr    = 0
   var fptr    = 0
   var vertexCount = 0
@@ -824,7 +828,7 @@ j_loop:
     }
   }
   this._vertexCount = vertexCount
-  this._coordinateBuffer.update(tverts)
+  this._coordinateBuffer.update(tverts.subarray(0,tptr))
   pool.freeFloat(tverts)
   pool.free(normals.data)
   
@@ -1031,9 +1035,7 @@ function createSurfacePlot(gl, field, params) {
   var contourPickShader = createPickContourShader(gl)
   contourPickShader.attributes.uv.location = 0
 
-  var estimatedSize = bits.nextPow2((field.shape[0]-1) * (field.shape[1]-1) * 6)
-
-  var coordinateBuffer = createBuffer(gl, estimatedSize * SURFACE_VERTEX_SIZE)
+  var coordinateBuffer = createBuffer(gl)
   var vao = createVAO(gl, [
       { buffer: coordinateBuffer,
         size: 4,
