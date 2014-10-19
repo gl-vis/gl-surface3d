@@ -919,10 +919,8 @@ dd_loop:
   this._contourBuffer.update(floatBuffer)
   pool.freeFloat(floatBuffer)
 
-  if(typeof params.colormap === "string") {
+  if(params.colormap) {
     this._colorMap.setPixels(genColormap(params.colormap))
-  } else if(Array.isArray(params.colormap)) {
-    //Set colormap
   }
 }
 
