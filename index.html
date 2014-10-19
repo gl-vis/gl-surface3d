@@ -126,7 +126,7 @@ shell.on("gl-render", function() {
     surface.dynamic()
   }
 })
-},{"../surface.js":2,"gl-now":3,"game-shell-orbit-camera":4,"gl-spikes":5,"gl-axes":6,"ndarray":7,"ndarray-fill":8,"dirichlet":9,"gl-matrix":10,"gl-select":11}],10:[function(require,module,exports){
+},{"../surface.js":2,"game-shell-orbit-camera":3,"gl-now":4,"gl-axes":5,"gl-spikes":6,"ndarray":7,"ndarray-fill":8,"dirichlet":9,"gl-matrix":10,"gl-select":11}],10:[function(require,module,exports){
 (function(){/**
  * @fileoverview gl-matrix - High performance matrix and vector operations
  * @author Brandon Jones
@@ -4377,7 +4377,7 @@ if(typeof(exports) !== 'undefined') {
 })(this);
 
 })()
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict"
 
 var createOrbitCamera = require("orbit-camera")
@@ -4413,7 +4413,7 @@ function attachCamera(shell) {
 }
 
 module.exports = attachCamera
-},{"orbit-camera":12}],3:[function(require,module,exports){
+},{"orbit-camera":12}],4:[function(require,module,exports){
 "use strict"
 
 var makeGameShell = require("game-shell")
@@ -4556,7 +4556,24 @@ function createGLShell(options) {
 }
 
 module.exports = createGLShell
-},{"game-shell":13,"webglew":14}],15:[function(require,module,exports){
+},{"game-shell":13,"webglew":14}],9:[function(require,module,exports){
+"use strict"
+
+var EPSILON = require("almost-equal").DBL_EPSILON
+
+module.exports = dirichlet
+
+var PI = Math.PI
+var sin = Math.sin
+
+function dirichlet(n, x) {
+  var denom = sin(PI * x / n)
+  if(-EPSILON <= denom && denom <= EPSILON) {
+    return 1.0
+  }
+  return sin(PI * x) / (n * denom)
+}
+},{"almost-equal":15}],16:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 // UTILITY
 var util = require('util');
@@ -8817,36 +8834,7 @@ function wrappedNDArrayCtor(data, shape, stride, offset) {
 
 module.exports = wrappedNDArrayCtor
 })(require("__browserify_Buffer").Buffer)
-},{"iota-array":16,"__browserify_Buffer":15}],9:[function(require,module,exports){
-"use strict"
-
-var EPSILON = require("almost-equal").DBL_EPSILON
-
-module.exports = dirichlet
-
-var PI = Math.PI
-var sin = Math.sin
-
-function dirichlet(n, x) {
-  var denom = sin(PI * x / n)
-  if(-EPSILON <= denom && denom <= EPSILON) {
-    return 1.0
-  }
-  return sin(PI * x) / (n * denom)
-}
-},{"almost-equal":17}],16:[function(require,module,exports){
-"use strict"
-
-function iota(n) {
-  var result = new Array(n)
-  for(var i=0; i<n; ++i) {
-    result[i] = i
-  }
-  return result
-}
-
-module.exports = iota
-},{}],17:[function(require,module,exports){
+},{"iota-array":17,"__browserify_Buffer":16}],15:[function(require,module,exports){
 "use strict"
 
 var abs = Math.abs
@@ -8868,6 +8856,18 @@ almostEqual.DBL_EPSILON = 2.2204460492503131e-16
 
 module.exports = almostEqual
 
+},{}],17:[function(require,module,exports){
+"use strict"
+
+function iota(n) {
+  var result = new Array(n)
+  for(var i=0; i<n; ++i) {
+    result[i] = i
+  }
+  return result
+}
+
+module.exports = iota
 },{}],8:[function(require,module,exports){
 "use strict"
 
@@ -9221,7 +9221,7 @@ if(typeof window.performance === "object") {
   module.exports = function() { return (new Date()).getTime() }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict'
 
 module.exports = createAxes
@@ -9714,7 +9714,7 @@ function createAxes(gl, options) {
   return axes
 }
 
-},{"./lib/lines.js":24,"./lib/text.js":25,"./lib/background.js":26,"./lib/cube.js":27,"./lib/ticks.js":28,"gl-state":29}],11:[function(require,module,exports){
+},{"./lib/text.js":24,"./lib/lines.js":25,"./lib/background.js":26,"./lib/cube.js":27,"./lib/ticks.js":28,"gl-state":29}],11:[function(require,module,exports){
 'use strict'
 
 module.exports = createSelectBuffer
@@ -10713,7 +10713,7 @@ void function(global, undefined_, undefined){
 }((0, eval)('this'));
 
 })()
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 var createBuffer = require("gl-buffer");
 var createVAO = require("gl-vao");
@@ -12087,9 +12087,7 @@ main_loop:
 }
 },{"uniq":46}],18:[function(require,module,exports){
 module.exports = require("cwise-compiler")
-},{"cwise-compiler":47}],30:[function(require,module,exports){
-module.exports = require("cwise-compiler")
-},{"cwise-compiler":48}],45:[function(require,module,exports){
+},{"cwise-compiler":47}],45:[function(require,module,exports){
 "use strict"
 
 function compileSearch(funcName, predicate, reversed, extraArgs, useNdarray, earlyOut) {
@@ -12151,7 +12149,9 @@ module.exports = {
   eq: compileBoundsSearch("-", true, "EQ", true)
 }
 
-},{}],46:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
+module.exports = require("cwise-compiler")
+},{"cwise-compiler":48}],46:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -12906,7 +12906,7 @@ exports.clearCache = function clearCache() {
   }
 }
 })(self,require("__browserify_Buffer").Buffer)
-},{"bit-twiddle":52,"dup":53,"__browserify_Buffer":15}],43:[function(require,module,exports){
+},{"bit-twiddle":52,"dup":53,"__browserify_Buffer":16}],43:[function(require,module,exports){
 "use strict"
 
 var webglew = require("webglew")
@@ -14517,7 +14517,7 @@ function getCubeEdges(model, view, projection, bounds) {
     axis: axis
   }
 }
-},{"bit-twiddle":52,"gl-matrix":10}],56:[function(require,module,exports){
+},{"bit-twiddle":52,"gl-matrix":10}],61:[function(require,module,exports){
 'use strict'
 
 var weakMap = typeof WeakMap === 'undefined' ? require('weakmap') : WeakMap
@@ -14559,7 +14559,7 @@ function initWebGLEW(gl) {
   return extensions
 }
 module.exports = initWebGLEW
-},{"weakmap":68}],61:[function(require,module,exports){
+},{"weakmap":68}],56:[function(require,module,exports){
 'use strict'
 
 var weakMap = typeof WeakMap === 'undefined' ? require('weakmap') : WeakMap
@@ -14622,7 +14622,7 @@ var invert = require("gl-mat4/invert");
 var bsearch = require("binary-search-bounds");
 var gradient = require("ndarray-gradient");
 var SURFACE_VERTEX_SIZE = 4 * (4 + 2 + 3);
-var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  surfaceNormal = normal;\n  if(dot(eyeDirection, normal) < 0.0) {\n    surfaceNormal = -normal;\n  }\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = max(3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha, 0.00001);\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.000001);\n  float LdotH = max(dot(lightDirection, H), 0.000001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / max(3.14159265 * VdotN, 0.000001);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = litColor;\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = max(3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha, 0.00001);\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.000001);\n  float LdotH = max(dot(lightDirection, H), 0.000001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / max(3.14159265 * VdotN, 0.000001);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = litColor;\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"}]), createPickShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  surfaceNormal = normal;\n  if(dot(eyeDirection, normal) < 0.0) {\n    surfaceNormal = -normal;\n  }\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createPickContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"}]);
+var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  surfaceNormal = normal;\n  if(dot(eyeDirection, normal) < 0.0) {\n    surfaceNormal = -normal;\n  }\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0001);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.000001);\n  float LdotH = max(dot(lightDirection, H), 0.000001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / max(3.14159265 * VdotN, 0.000001);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = mix(litColor, contourColor, contourTint);\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nfloat b_x_beckmannDistribution(float x, float roughness) {\n  float NdotH = max(x, 0.0001);\n  float cos2Alpha = NdotH * NdotH;\n  float tan2Alpha = (cos2Alpha - 1.0) / cos2Alpha;\n  float roughness2 = roughness * roughness;\n  float denom = 3.141592653589793 * roughness2 * cos2Alpha * cos2Alpha;\n  return exp(tan2Alpha / roughness2) / denom;\n}\nfloat a_x_cookTorranceSpecular(vec3 lightDirection, vec3 viewDirection, vec3 surfaceNormal, float roughness, float fresnel) {\n  float VdotN = max(dot(viewDirection, surfaceNormal), 0.0);\n  float LdotN = max(dot(lightDirection, surfaceNormal), 0.0);\n  vec3 H = normalize(lightDirection + viewDirection);\n  float NdotH = max(dot(surfaceNormal, H), 0.0);\n  float VdotH = max(dot(viewDirection, H), 0.000001);\n  float LdotH = max(dot(lightDirection, H), 0.000001);\n  float G1 = (2.0 * NdotH * VdotN) / VdotH;\n  float G2 = (2.0 * NdotH * LdotN) / LdotH;\n  float G = min(1.0, min(G1, G2));\n  float D = b_x_beckmannDistribution(NdotH, roughness);\n  float F = pow(1.0 - VdotN, fresnel);\n  return G * F * D / max(3.14159265 * VdotN, 0.000001);\n}\nuniform vec3 lowerBound, upperBound;\nuniform float contourTint;\nuniform vec4 contourColor;\nuniform sampler2D colormap;\nuniform vec3 clipBounds[2];\nuniform float roughness, fresnel, kambient, kdiffuse, kspecular;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec3 N = normalize(surfaceNormal);\n  vec3 V = normalize(eyeDirection);\n  vec3 L = normalize(lightDirection);\n  float specular = a_x_cookTorranceSpecular(L, V, N, roughness, fresnel);\n  float diffuse = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);\n  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);\n  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));\n  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1, 1, 1) * specular, surfaceColor.a);\n  gl_FragColor = mix(litColor, contourColor, contourTint);\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"lowerBound","type":"vec3"},{"name":"upperBound","type":"vec3"},{"name":"contourTint","type":"float"},{"name":"contourColor","type":"vec4"},{"name":"colormap","type":"sampler2D"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"roughness","type":"float"},{"name":"fresnel","type":"float"},{"name":"kambient","type":"float"},{"name":"kdiffuse","type":"float"},{"name":"kspecular","type":"float"}], [{"name":"uv","type":"vec4"}]), createPickShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nattribute vec2 f;\nattribute vec3 normal;\nuniform mat4 model, view, projection;\nuniform vec3 lightPosition, eyePosition;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);\n  gl_Position = projection * view * worldPosition;\n  value = f.x;\n  kill = f.y;\n  worldCoordinate = vec3(uv.zw, f.x);\n  planeCoordinate = uv.xy;\n  lightDirection = lightPosition - worldCoordinate;\n  eyeDirection = eyePosition - worldCoordinate;\n  surfaceNormal = normal;\n  if(dot(eyeDirection, normal) < 0.0) {\n    surfaceNormal = -normal;\n  }\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"lightPosition","type":"vec3"},{"name":"eyePosition","type":"vec3"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"},{"name":"f","type":"vec2"},{"name":"normal","type":"vec3"}]), createPickContourShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nprecision mediump float;\nattribute vec4 uv;\nuniform mat3 permutation;\nuniform mat4 model, view, projection;\nuniform float height, zOffset;\nvarying float value;\nvarying float kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 lightDirection, eyeDirection, surfaceNormal;\nvoid main() {\n  vec3 dataCoordinate = permutation * vec3(uv.xy, height);\n  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);\n  vec4 clipPosition = projection * view * worldPosition;\n  clipPosition.z = clipPosition.z + zOffset;\n  gl_Position = clipPosition;\n  value = height;\n  kill = -1.0;\n  worldCoordinate = dataCoordinate;\n  planeCoordinate = uv.zw;\n  surfaceNormal = vec3(1, 0, 0);\n  eyeDirection = vec3(0, 1, 0);\n  lightDirection = vec3(0, 0, 1);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec2 shape;\nuniform vec3 clipBounds[2];\nuniform float pickId;\nvarying float value, kill;\nvarying vec3 worldCoordinate;\nvarying vec2 planeCoordinate;\nvarying vec3 surfaceNormal;\nvec2 splitFloat(float v) {\n  float vh = 255.0 * v;\n  float upper = floor(vh);\n  float lower = fract(vh);\n  return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);\n}\nvoid main() {\n  if(kill > 0.0 || any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {\n    discard;\n  }\n  vec2 ux = splitFloat(planeCoordinate.x / shape.x);\n  vec2 uy = splitFloat(planeCoordinate.y / shape.y);\n  gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y / 16.0));\n}", [{"name":"permutation","type":"mat3"},{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"height","type":"float"},{"name":"zOffset","type":"float"},{"name":"shape","type":"vec2"},{"name":"clipBounds[0]","type":"vec3"},{"name":"clipBounds[1]","type":"vec3"},{"name":"pickId","type":"float"}], [{"name":"uv","type":"vec4"}]);
 var IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 var QUAD = [[0, 0], [0, 1], [1, 0], [1, 1], [1, 0], [0, 1]];
 var PERMUTATIONS = [[0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0]];
@@ -15447,10 +15447,9 @@ proto.update = function(params) {
     this._contourBuffer.update(floatBuffer);
     pool.freeFloat(floatBuffer);
 
-    if (typeof params.colormap === "string") {
+    if (params.colormap) {
         this._colorMap.setPixels(genColormap(params.colormap));
-    } else if (Array.isArray(params.colormap))
-        {}
+    }
 };
 
 proto.dispose = function() {
@@ -15595,134 +15594,7 @@ function createSurfacePlot(gl, field, params) {
     surface.update(nparams);
     return surface;
 }
-},{"glslify/adapter.js":41,"gl-mat4/multiply":70,"gl-mat4/invert":71,"gl-axes/lib/cube":27,"dup":53,"bit-twiddle":52,"glslify":44,"gl-buffer":42,"gl-vao":43,"typedarray-pool":32,"gl-texture2d":51,"colormap":72,"ndarray-ops":62,"ndarray-pack":73,"ndarray":7,"surface-nets":74,"binary-search-bounds":45,"ndarray-gradient":75}],24:[function(require,module,exports){
-"use strict";
-module.exports = createLines;
-var createBuffer = require("gl-buffer");
-var createVAO = require("gl-vao");
-var glslify = require("glslify");
-var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nattribute vec2 position;\nuniform mat4 model, view, projection;\nuniform vec3 offset, majorAxis, minorAxis;\nvoid main() {\n  vec3 vPosition = position.x * majorAxis + position.y * minorAxis + offset;\n  gl_Position = projection * view * model * vec4(vPosition, 1.0);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec4 color;\nvoid main() {\n  gl_FragColor = color;\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"offset","type":"vec3"},{"name":"majorAxis","type":"vec3"},{"name":"minorAxis","type":"vec3"},{"name":"color","type":"vec4"}], [{"name":"position","type":"vec2"}]);
-
-function Lines(gl, vertBuffer, vao, shader, tickCount, tickOffset, gridCount, gridOffset) {
-    this.gl = gl;
-    this.vertBuffer = vertBuffer;
-    this.vao = vao;
-    this.shader = shader;
-    this.tickCount = tickCount;
-    this.tickOffset = tickOffset;
-    this.gridCount = gridCount;
-    this.gridOffset = gridOffset;
-}
-
-var proto = Lines.prototype;
-
-proto.bind = function(model, view, projection) {
-    this.shader.bind();
-    this.shader.uniforms.model = model;
-    this.shader.uniforms.view = view;
-    this.shader.uniforms.projection = projection;
-    this.vao.bind();
-};
-
-proto.drawAxisLine = function(j, bounds, offset, color) {
-    this.shader.uniforms.majorAxis = [0, 0, 0];
-    var minorAxis = [0, 0, 0];
-    minorAxis[j] = bounds[1][j] - bounds[0][j];
-    this.shader.uniforms.minorAxis = minorAxis;
-    var noffset = offset.slice();
-    noffset[j] += bounds[0][j];
-    this.shader.uniforms.offset = noffset;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, 2);
-};
-
-proto.drawAxisTicks = function(j, offset, minorAxis, color) {
-    var majorAxis = [0, 0, 0];
-    majorAxis[j] = 1;
-    this.shader.uniforms.majorAxis = majorAxis;
-    this.shader.uniforms.offset = offset;
-    this.shader.uniforms.minorAxis = minorAxis;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, this.tickCount[j], this.tickOffset[j]);
-};
-
-proto.drawGrid = function(i, j, bounds, offset, color) {
-    var minorAxis = [0, 0, 0];
-    minorAxis[j] = bounds[1][j] - bounds[0][j];
-    this.shader.uniforms.minorAxis = minorAxis;
-    var noffset = offset.slice();
-    noffset[j] += bounds[0][j];
-    this.shader.uniforms.offset = noffset;
-    var majorAxis = [0, 0, 0];
-    majorAxis[i] = 1;
-    this.shader.uniforms.majorAxis = majorAxis;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, this.gridCount[i], this.gridOffset[i]);
-};
-
-proto.drawZero = function(j, bounds, offset, color) {
-    this.shader.uniforms.majorAxis = [0, 0, 0];
-    var minorAxis = [0, 0, 0];
-    minorAxis[j] = bounds[1][j] - bounds[0][j];
-    this.shader.uniforms.minorAxis = minorAxis;
-    var noffset = offset.slice();
-    noffset[j] += bounds[0][j];
-    this.shader.uniforms.offset = noffset;
-    this.shader.uniforms.color = color;
-    this.vao.draw(this.gl.LINES, 2);
-};
-
-proto.dispose = function() {
-    this.vao.dispose();
-    this.vertBuffer.dispose();
-    this.shader.dispose();
-};
-
-function createLines(gl, bounds, ticks) {
-    var vertices = [];
-    var tickOffset = [0, 0, 0];
-    var tickCount = [0, 0, 0];
-    var gridOffset = [0, 0, 0];
-    var gridCount = [0, 0, 0];
-    vertices.push(0, 0, 0, 1);
-
-    for (var i = 0; i < 3; ++i) {
-        var start = vertices.length / 2 | 0;
-
-        for (var j = 0; j < ticks[i].length; ++j) {
-            vertices.push(+ticks[i][j].x, 0, +ticks[i][j].x, 1);
-        }
-
-        var end = vertices.length / 2 | 0;
-        tickOffset[i] = start;
-        tickCount[i] = end - start;
-        var start = vertices.length / 2 | 0;
-
-        for (var k = 0; k < ticks[i].length; ++k) {
-            var tx = +ticks[i][k].x;
-            vertices.push(tx, 0, tx, 1);
-        }
-
-        var end = vertices.length / 2 | 0;
-        gridOffset[i] = start;
-        gridCount[i] = end - start;
-    }
-
-    var vertBuf = createBuffer(gl, new Float32Array(vertices));
-
-    var vao = createVAO(gl, [{
-        "buffer": vertBuf,
-        "type": gl.FLOAT,
-        "size": 2,
-        "stride": 0,
-        "offset": 0
-    }]);
-
-    var shader = createShader(gl);
-    shader.attributes.position.location = 0;
-    return new Lines(gl, vertBuf, vao, shader, tickCount, tickOffset, gridCount, gridOffset);
-}
-},{"glslify/adapter.js":41,"gl-buffer":42,"gl-vao":43,"glslify":44}],25:[function(require,module,exports){
+},{"glslify/adapter.js":41,"gl-mat4/multiply":70,"gl-mat4/invert":71,"gl-axes/lib/cube":27,"dup":53,"bit-twiddle":52,"glslify":44,"gl-buffer":42,"gl-vao":43,"gl-texture2d":51,"typedarray-pool":32,"colormap":72,"ndarray-ops":62,"ndarray-pack":73,"ndarray":7,"surface-nets":74,"binary-search-bounds":45,"ndarray-gradient":75}],24:[function(require,module,exports){
 (function(process){"use strict";
 module.exports = createTextSprites;
 var createBuffer = require("gl-buffer");
@@ -15855,7 +15727,134 @@ function createTextSprites(gl, bounds, labels, labelFont, ticks, tickFont) {
     return new TextSprites(gl, shader, buffer, vao, tickOffset, tickCount, labelOffset, labelCount);
 }
 })(require("__browserify_process"))
-},{"glslify/adapter.js":41,"vectorize-text":76,"gl-buffer":42,"gl-vao":43,"glslify":44,"__browserify_process":19}],26:[function(require,module,exports){
+},{"glslify/adapter.js":41,"vectorize-text":76,"gl-buffer":42,"gl-vao":43,"glslify":44,"__browserify_process":19}],25:[function(require,module,exports){
+"use strict";
+module.exports = createLines;
+var createBuffer = require("gl-buffer");
+var createVAO = require("gl-vao");
+var glslify = require("glslify");
+var createShader = require("glslify/adapter.js")("\n#define GLSLIFY 1\n\nattribute vec2 position;\nuniform mat4 model, view, projection;\nuniform vec3 offset, majorAxis, minorAxis;\nvoid main() {\n  vec3 vPosition = position.x * majorAxis + position.y * minorAxis + offset;\n  gl_Position = projection * view * model * vec4(vPosition, 1.0);\n}", "\n#define GLSLIFY 1\n\nprecision mediump float;\nuniform vec4 color;\nvoid main() {\n  gl_FragColor = color;\n}", [{"name":"model","type":"mat4"},{"name":"view","type":"mat4"},{"name":"projection","type":"mat4"},{"name":"offset","type":"vec3"},{"name":"majorAxis","type":"vec3"},{"name":"minorAxis","type":"vec3"},{"name":"color","type":"vec4"}], [{"name":"position","type":"vec2"}]);
+
+function Lines(gl, vertBuffer, vao, shader, tickCount, tickOffset, gridCount, gridOffset) {
+    this.gl = gl;
+    this.vertBuffer = vertBuffer;
+    this.vao = vao;
+    this.shader = shader;
+    this.tickCount = tickCount;
+    this.tickOffset = tickOffset;
+    this.gridCount = gridCount;
+    this.gridOffset = gridOffset;
+}
+
+var proto = Lines.prototype;
+
+proto.bind = function(model, view, projection) {
+    this.shader.bind();
+    this.shader.uniforms.model = model;
+    this.shader.uniforms.view = view;
+    this.shader.uniforms.projection = projection;
+    this.vao.bind();
+};
+
+proto.drawAxisLine = function(j, bounds, offset, color) {
+    this.shader.uniforms.majorAxis = [0, 0, 0];
+    var minorAxis = [0, 0, 0];
+    minorAxis[j] = bounds[1][j] - bounds[0][j];
+    this.shader.uniforms.minorAxis = minorAxis;
+    var noffset = offset.slice();
+    noffset[j] += bounds[0][j];
+    this.shader.uniforms.offset = noffset;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, 2);
+};
+
+proto.drawAxisTicks = function(j, offset, minorAxis, color) {
+    var majorAxis = [0, 0, 0];
+    majorAxis[j] = 1;
+    this.shader.uniforms.majorAxis = majorAxis;
+    this.shader.uniforms.offset = offset;
+    this.shader.uniforms.minorAxis = minorAxis;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, this.tickCount[j], this.tickOffset[j]);
+};
+
+proto.drawGrid = function(i, j, bounds, offset, color) {
+    var minorAxis = [0, 0, 0];
+    minorAxis[j] = bounds[1][j] - bounds[0][j];
+    this.shader.uniforms.minorAxis = minorAxis;
+    var noffset = offset.slice();
+    noffset[j] += bounds[0][j];
+    this.shader.uniforms.offset = noffset;
+    var majorAxis = [0, 0, 0];
+    majorAxis[i] = 1;
+    this.shader.uniforms.majorAxis = majorAxis;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, this.gridCount[i], this.gridOffset[i]);
+};
+
+proto.drawZero = function(j, bounds, offset, color) {
+    this.shader.uniforms.majorAxis = [0, 0, 0];
+    var minorAxis = [0, 0, 0];
+    minorAxis[j] = bounds[1][j] - bounds[0][j];
+    this.shader.uniforms.minorAxis = minorAxis;
+    var noffset = offset.slice();
+    noffset[j] += bounds[0][j];
+    this.shader.uniforms.offset = noffset;
+    this.shader.uniforms.color = color;
+    this.vao.draw(this.gl.LINES, 2);
+};
+
+proto.dispose = function() {
+    this.vao.dispose();
+    this.vertBuffer.dispose();
+    this.shader.dispose();
+};
+
+function createLines(gl, bounds, ticks) {
+    var vertices = [];
+    var tickOffset = [0, 0, 0];
+    var tickCount = [0, 0, 0];
+    var gridOffset = [0, 0, 0];
+    var gridCount = [0, 0, 0];
+    vertices.push(0, 0, 0, 1);
+
+    for (var i = 0; i < 3; ++i) {
+        var start = vertices.length / 2 | 0;
+
+        for (var j = 0; j < ticks[i].length; ++j) {
+            vertices.push(+ticks[i][j].x, 0, +ticks[i][j].x, 1);
+        }
+
+        var end = vertices.length / 2 | 0;
+        tickOffset[i] = start;
+        tickCount[i] = end - start;
+        var start = vertices.length / 2 | 0;
+
+        for (var k = 0; k < ticks[i].length; ++k) {
+            var tx = +ticks[i][k].x;
+            vertices.push(tx, 0, tx, 1);
+        }
+
+        var end = vertices.length / 2 | 0;
+        gridOffset[i] = start;
+        gridCount[i] = end - start;
+    }
+
+    var vertBuf = createBuffer(gl, new Float32Array(vertices));
+
+    var vao = createVAO(gl, [{
+        "buffer": vertBuf,
+        "type": gl.FLOAT,
+        "size": 2,
+        "stride": 0,
+        "offset": 0
+    }]);
+
+    var shader = createShader(gl);
+    shader.attributes.position.location = 0;
+    return new Lines(gl, vertBuf, vao, shader, tickCount, tickOffset, gridCount, gridOffset);
+}
+},{"glslify/adapter.js":41,"gl-buffer":42,"gl-vao":43,"glslify":44}],26:[function(require,module,exports){
 "use strict";
 module.exports = createBackgroundCube;
 var createBuffer = require("gl-buffer");
@@ -16607,7 +16606,7 @@ function invert(out, a) {
 
     return out;
 };
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 (function(){/* (The MIT License)
  *
  * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
@@ -16850,7 +16849,7 @@ void function(global, undefined_, undefined){
 }((0, eval)('this'));
 
 })()
-},{}],69:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function(){/* (The MIT License)
  *
  * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
@@ -17572,7 +17571,10 @@ function createText(str, options) {
   }
   return vectorizeText(str, canvas, context, options)
 }
-},{"./lib/vtext":79,"canvas-browserify":80}],77:[function(require,module,exports){
+},{"./lib/vtext":79,"canvas-browserify":80}],81:[function(require,module,exports){
+module.exports={"jet":[{"index":0,"rgb":[0,0,131]},{"index":0.125,"rgb":[0,60,170]},{"index":0.375,"rgb":[5,255,255]},{"index":0.625,"rgb":[255,255,0]},{"index":0.875,"rgb":[250,0,0]},{"index":1,"rgb":[128,0,0]}],"hsv":[{"index":0,"rgb":[255,0,0]},{"index":0.169,"rgb":[253,255,2]},{"index":0.173,"rgb":[247,255,2]},{"index":0.337,"rgb":[0,252,4]},{"index":0.341,"rgb":[0,252,10]},{"index":0.506,"rgb":[1,249,255]},{"index":0.671,"rgb":[2,0,253]},{"index":0.675,"rgb":[8,0,253]},{"index":0.839,"rgb":[255,0,251]},{"index":0.843,"rgb":[255,0,245]},{"index":1,"rgb":[255,0,6]}],"hot":[{"index":0,"rgb":[0,0,0]},{"index":0.3,"rgb":[230,0,0]},{"index":0.6,"rgb":[255,210,0]},{"index":1,"rgb":[255,255,255]}],"cool":[{"index":0,"rgb":[0,255,255]},{"index":1,"rgb":[255,0,255]}],"spring":[{"index":0,"rgb":[255,0,255]},{"index":1,"rgb":[255,255,0]}],"summer":[{"index":0,"rgb":[0,128,102]},{"index":1,"rgb":[255,255,102]}],"autumn":[{"index":0,"rgb":[255,0,0]},{"index":1,"rgb":[255,255,0]}],"winter":[{"index":0,"rgb":[0,0,255]},{"index":1,"rgb":[0,255,128]}],"bone":[{"index":0,"rgb":[0,0,0]},{"index":0.376,"rgb":[84,84,116]},{"index":0.753,"rgb":[169,200,200]},{"index":1,"rgb":[255,255,255]}],"copper":[{"index":0,"rgb":[0,0,0]},{"index":0.804,"rgb":[255,160,102]},{"index":1,"rgb":[255,199,127]}],"greys":[{"index":0,"rgb":[0,0,0]},{"index":1,"rgb":[255,255,255]}],"yignbu":[{"index":0,"rgb":[8,29,88]},{"index":0.125,"rgb":[37,52,148]},{"index":0.25,"rgb":[34,94,168]},{"index":0.375,"rgb":[29,145,192]},{"index":0.5,"rgb":[65,182,196]},{"index":0.625,"rgb":[127,205,187]},{"index":0.75,"rgb":[199,233,180]},{"index":0.875,"rgb":[237,248,217]},{"index":1,"rgb":[255,255,217]}],"greens":[{"index":0,"rgb":[0,68,27]},{"index":0.125,"rgb":[0,109,44]},{"index":0.25,"rgb":[35,139,69]},{"index":0.375,"rgb":[65,171,93]},{"index":0.5,"rgb":[116,196,118]},{"index":0.625,"rgb":[161,217,155]},{"index":0.75,"rgb":[199,233,192]},{"index":0.875,"rgb":[229,245,224]},{"index":1,"rgb":[247,252,245]}],"yiorrd":[{"index":0,"rgb":[128,0,38]},{"index":0.125,"rgb":[189,0,38]},{"index":0.25,"rgb":[227,26,28]},{"index":0.375,"rgb":[252,78,42]},{"index":0.5,"rgb":[253,141,60]},{"index":0.625,"rgb":[254,178,76]},{"index":0.75,"rgb":[254,217,118]},{"index":0.875,"rgb":[255,237,160]},{"index":1,"rgb":[255,255,204]}],"bluered":[{"index":0,"rgb":[0,0,255]},{"index":1,"rgb":[255,0,0]}],"rdbu":[{"index":0,"rgb":[5,10,172]},{"index":0.35,"rgb":[106,137,247]},{"index":0.5,"rgb":[190,190,190]},{"index":0.6,"rgb":[220,170,132]},{"index":0.7,"rgb":[230,145,90]},{"index":1,"rgb":[178,10,28]}],"picnic":[{"index":0,"rgb":[0,0,255]},{"index":0.1,"rgb":[51,153,255]},{"index":0.2,"rgb":[102,204,255]},{"index":0.3,"rgb":[153,204,255]},{"index":0.4,"rgb":[204,204,255]},{"index":0.5,"rgb":[255,255,255]},{"index":0.6,"rgb":[255,204,255]},{"index":0.7,"rgb":[255,153,255]},{"index":0.8,"rgb":[255,102,204]},{"index":0.9,"rgb":[255,102,102]},{"index":1,"rgb":[255,0,0]}],"rainbow":[{"index":0,"rgb":[150,0,90]},{"index":0.125,"rgb":[0,0,200]},{"index":0.25,"rgb":[0,25,255]},{"index":0.375,"rgb":[0,152,255]},{"index":0.5,"rgb":[44,255,150]},{"index":0.625,"rgb":[151,255,0]},{"index":0.75,"rgb":[255,234,0]},{"index":0.875,"rgb":[255,111,0]},{"index":1,"rgb":[255,0,0]}],"portland":[{"index":0,"rgb":[12,51,131]},{"index":0.25,"rgb":[10,136,186]},{"index":0.5,"rgb":[242,211,56]},{"index":0.75,"rgb":[242,143,56]},{"index":1,"rgb":[217,30,30]}],"blackbody":[{"index":0,"rgb":[0,0,0]},{"index":0.2,"rgb":[230,0,0]},{"index":0.4,"rgb":[230,210,0]},{"index":0.7,"rgb":[255,255,255]},{"index":1,"rgb":[160,200,255]}],"earth":[{"index":0,"rgb":[0,0,130]},{"index":0.1,"rgb":[0,180,180]},{"index":0.2,"rgb":[40,210,40]},{"index":0.4,"rgb":[230,230,50]},{"index":0.6,"rgb":[120,70,20]},{"index":1,"rgb":[255,255,255]}],"electric":[{"index":0,"rgb":[0,0,0]},{"index":0.15,"rgb":[30,0,100]},{"index":0.4,"rgb":[120,0,100]},{"index":0.6,"rgb":[160,90,0]},{"index":0.8,"rgb":[230,200,0]},{"index":1,"rgb":[255,250,220]}]}
+
+},{}],77:[function(require,module,exports){
 'use strict'
 
 var weakMap = typeof WeakMap === 'undefined' ? require('weakmap') : WeakMap
@@ -17614,10 +17616,7 @@ function initWebGLEW(gl) {
   return extensions
 }
 module.exports = initWebGLEW
-},{"weakmap":81}],82:[function(require,module,exports){
-module.exports={"jet":[{"index":0,"rgb":[0,0,131]},{"index":0.125,"rgb":[0,60,170]},{"index":0.375,"rgb":[5,255,255]},{"index":0.625,"rgb":[255,255,0]},{"index":0.875,"rgb":[250,0,0]},{"index":1,"rgb":[128,0,0]}],"hsv":[{"index":0,"rgb":[255,0,0]},{"index":0.169,"rgb":[253,255,2]},{"index":0.173,"rgb":[247,255,2]},{"index":0.337,"rgb":[0,252,4]},{"index":0.341,"rgb":[0,252,10]},{"index":0.506,"rgb":[1,249,255]},{"index":0.671,"rgb":[2,0,253]},{"index":0.675,"rgb":[8,0,253]},{"index":0.839,"rgb":[255,0,251]},{"index":0.843,"rgb":[255,0,245]},{"index":1,"rgb":[255,0,6]}],"hot":[{"index":0,"rgb":[0,0,0]},{"index":0.3,"rgb":[230,0,0]},{"index":0.6,"rgb":[255,210,0]},{"index":1,"rgb":[255,255,255]}],"cool":[{"index":0,"rgb":[0,255,255]},{"index":1,"rgb":[255,0,255]}],"spring":[{"index":0,"rgb":[255,0,255]},{"index":1,"rgb":[255,255,0]}],"summer":[{"index":0,"rgb":[0,128,102]},{"index":1,"rgb":[255,255,102]}],"autumn":[{"index":0,"rgb":[255,0,0]},{"index":1,"rgb":[255,255,0]}],"winter":[{"index":0,"rgb":[0,0,255]},{"index":1,"rgb":[0,255,128]}],"bone":[{"index":0,"rgb":[0,0,0]},{"index":0.376,"rgb":[84,84,116]},{"index":0.753,"rgb":[169,200,200]},{"index":1,"rgb":[255,255,255]}],"copper":[{"index":0,"rgb":[0,0,0]},{"index":0.804,"rgb":[255,160,102]},{"index":1,"rgb":[255,199,127]}],"greys":[{"index":0,"rgb":[0,0,0]},{"index":1,"rgb":[255,255,255]}],"yignbu":[{"index":0,"rgb":[8,29,88]},{"index":0.125,"rgb":[37,52,148]},{"index":0.25,"rgb":[34,94,168]},{"index":0.375,"rgb":[29,145,192]},{"index":0.5,"rgb":[65,182,196]},{"index":0.625,"rgb":[127,205,187]},{"index":0.75,"rgb":[199,233,180]},{"index":0.875,"rgb":[237,248,217]},{"index":1,"rgb":[255,255,217]}],"greens":[{"index":0,"rgb":[0,68,27]},{"index":0.125,"rgb":[0,109,44]},{"index":0.25,"rgb":[35,139,69]},{"index":0.375,"rgb":[65,171,93]},{"index":0.5,"rgb":[116,196,118]},{"index":0.625,"rgb":[161,217,155]},{"index":0.75,"rgb":[199,233,192]},{"index":0.875,"rgb":[229,245,224]},{"index":1,"rgb":[247,252,245]}],"yiorrd":[{"index":0,"rgb":[128,0,38]},{"index":0.125,"rgb":[189,0,38]},{"index":0.25,"rgb":[227,26,28]},{"index":0.375,"rgb":[252,78,42]},{"index":0.5,"rgb":[253,141,60]},{"index":0.625,"rgb":[254,178,76]},{"index":0.75,"rgb":[254,217,118]},{"index":0.875,"rgb":[255,237,160]},{"index":1,"rgb":[255,255,204]}],"bluered":[{"index":0,"rgb":[0,0,255]},{"index":1,"rgb":[255,0,0]}],"rdbu":[{"index":0,"rgb":[5,10,172]},{"index":0.35,"rgb":[106,137,247]},{"index":0.5,"rgb":[190,190,190]},{"index":0.6,"rgb":[220,170,132]},{"index":0.7,"rgb":[230,145,90]},{"index":1,"rgb":[178,10,28]}],"picnic":[{"index":0,"rgb":[0,0,255]},{"index":0.1,"rgb":[51,153,255]},{"index":0.2,"rgb":[102,204,255]},{"index":0.3,"rgb":[153,204,255]},{"index":0.4,"rgb":[204,204,255]},{"index":0.5,"rgb":[255,255,255]},{"index":0.6,"rgb":[255,204,255]},{"index":0.7,"rgb":[255,153,255]},{"index":0.8,"rgb":[255,102,204]},{"index":0.9,"rgb":[255,102,102]},{"index":1,"rgb":[255,0,0]}],"rainbow":[{"index":0,"rgb":[150,0,90]},{"index":0.125,"rgb":[0,0,200]},{"index":0.25,"rgb":[0,25,255]},{"index":0.375,"rgb":[0,152,255]},{"index":0.5,"rgb":[44,255,150]},{"index":0.625,"rgb":[151,255,0]},{"index":0.75,"rgb":[255,234,0]},{"index":0.875,"rgb":[255,111,0]},{"index":1,"rgb":[255,0,0]}],"portland":[{"index":0,"rgb":[12,51,131]},{"index":0.25,"rgb":[10,136,186]},{"index":0.5,"rgb":[242,211,56]},{"index":0.75,"rgb":[242,143,56]},{"index":1,"rgb":[217,30,30]}],"blackbody":[{"index":0,"rgb":[0,0,0]},{"index":0.2,"rgb":[230,0,0]},{"index":0.4,"rgb":[230,210,0]},{"index":0.7,"rgb":[255,255,255]},{"index":1,"rgb":[160,200,255]}],"earth":[{"index":0,"rgb":[0,0,130]},{"index":0.1,"rgb":[0,180,180]},{"index":0.2,"rgb":[40,210,40]},{"index":0.4,"rgb":[230,230,50]},{"index":0.6,"rgb":[120,70,20]},{"index":1,"rgb":[255,255,255]}],"electric":[{"index":0,"rgb":[0,0,0]},{"index":0.15,"rgb":[30,0,100]},{"index":0.4,"rgb":[120,0,100]},{"index":0.6,"rgb":[160,90,0]},{"index":0.8,"rgb":[230,200,0]},{"index":1,"rgb":[255,250,220]}]}
-
-},{}],78:[function(require,module,exports){
+},{"weakmap":82}],78:[function(require,module,exports){
 "use strict"
 
 var createThunk = require("./lib/thunk.js")
@@ -17768,17 +17767,22 @@ module.exports = function (spec) {
 
     if ( !at.isPlainObject(spec) ) spec = {};
 
-    colormap = spec.colormap || 'jet';
-    nshades = spec.nshades || 72;
-    format = spec.format || 'hex';
+    if (!spec.colormap) colormap = 'jet';
 
-    colormap = colormap.toLowerCase();
+    if (typeof spec.colormap === 'string') {
+        colormap = spec.colormap.toLowerCase();
 
-    if (!(colormap in colorScale)) {
-        throw Error(colormap + ' not a supported colorscale');
+        if (!(colormap in colorScale)) {
+            throw Error(colormap + ' not a supported colorscale');
+        }
+        cmap = colorScale[colormap];
+
+    } else if (Array.isArray(spec.colormap)) {
+        cmap = spec.colormap;
     }
 
-    cmap = colorScale[colormap];
+    nshades = spec.nshades || 72;
+    format = spec.format || 'hex';
 
     if (cmap.length > nshades) {
         throw new Error(colormap +
@@ -17832,7 +17836,7 @@ function rgb2hex(rgb) {
     return hex;
 }
 
-},{"./colorScales.json":82,"arraytools":84}],74:[function(require,module,exports){
+},{"./colorScales.json":81,"arraytools":84}],74:[function(require,module,exports){
 "use strict"
 
 module.exports = surfaceNets
@@ -18156,250 +18160,7 @@ function getCubeEdges(model, view, projection, bounds) {
     axis: axis
   }
 }
-},{"bit-twiddle":52,"gl-matrix":10}],81:[function(require,module,exports){
-(function(){/* (The MIT License)
- *
- * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
- * associated documentation files (the 'Software'), to deal in the Software without restriction,
- * including without limitation the rights to use, copy, modify, merge, publish, distribute,
- * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included with all copies or
- * substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
- * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  CLAIM,
- * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-// Original WeakMap implementation by Gozala @ https://gist.github.com/1269991
-// Updated and bugfixed by Raynos @ https://gist.github.com/1638059
-// Expanded by Benvie @ https://github.com/Benvie/harmony-collections
-
-void function(global, undefined_, undefined){
-  var getProps = Object.getOwnPropertyNames,
-      defProp  = Object.defineProperty,
-      toSource = Function.prototype.toString,
-      create   = Object.create,
-      hasOwn   = Object.prototype.hasOwnProperty,
-      funcName = /^\n?function\s?(\w*)?_?\(/;
-
-
-  function define(object, key, value){
-    if (typeof key === 'function') {
-      value = key;
-      key = nameOf(value).replace(/_$/, '');
-    }
-    return defProp(object, key, { configurable: true, writable: true, value: value });
-  }
-
-  function nameOf(func){
-    return typeof func !== 'function'
-          ? '' : 'name' in func
-          ? func.name : toSource.call(func).match(funcName)[1];
-  }
-
-  // ############
-  // ### Data ###
-  // ############
-
-  var Data = (function(){
-    var dataDesc = { value: { writable: true, value: undefined } },
-        datalock = 'return function(k){if(k===s)return l}',
-        uids     = create(null),
-
-        createUID = function(){
-          var key = Math.random().toString(36).slice(2);
-          return key in uids ? createUID() : uids[key] = key;
-        },
-
-        globalID = createUID(),
-
-        storage = function(obj){
-          if (hasOwn.call(obj, globalID))
-            return obj[globalID];
-
-          if (!Object.isExtensible(obj))
-            throw new TypeError("Object must be extensible");
-
-          var store = create(null);
-          defProp(obj, globalID, { value: store });
-          return store;
-        };
-
-    // common per-object storage area made visible by patching getOwnPropertyNames'
-    define(Object, function getOwnPropertyNames(obj){
-      var props = getProps(obj);
-      if (hasOwn.call(obj, globalID))
-        props.splice(props.indexOf(globalID), 1);
-      return props;
-    });
-
-    function Data(){
-      var puid = createUID(),
-          secret = {};
-
-      this.unlock = function(obj){
-        var store = storage(obj);
-        if (hasOwn.call(store, puid))
-          return store[puid](secret);
-
-        var data = create(null, dataDesc);
-        defProp(store, puid, {
-          value: new Function('s', 'l', datalock)(secret, data)
-        });
-        return data;
-      }
-    }
-
-    define(Data.prototype, function get(o){ return this.unlock(o).value });
-    define(Data.prototype, function set(o, v){ this.unlock(o).value = v });
-
-    return Data;
-  }());
-
-
-  var WM = (function(data){
-    var validate = function(key){
-      if (key == null || typeof key !== 'object' && typeof key !== 'function')
-        throw new TypeError("Invalid WeakMap key");
-    }
-
-    var wrap = function(collection, value){
-      var store = data.unlock(collection);
-      if (store.value)
-        throw new TypeError("Object is already a WeakMap");
-      store.value = value;
-    }
-
-    var unwrap = function(collection){
-      var storage = data.unlock(collection).value;
-      if (!storage)
-        throw new TypeError("WeakMap is not generic");
-      return storage;
-    }
-
-    var initialize = function(weakmap, iterable){
-      if (iterable !== null && typeof iterable === 'object' && typeof iterable.forEach === 'function') {
-        iterable.forEach(function(item, i){
-          if (item instanceof Array && item.length === 2)
-            set.call(weakmap, iterable[i][0], iterable[i][1]);
-        });
-      }
-    }
-
-
-    function WeakMap(iterable){
-      if (this === global || this == null || this === WeakMap.prototype)
-        return new WeakMap(iterable);
-
-      wrap(this, new Data);
-      initialize(this, iterable);
-    }
-
-    function get(key){
-      validate(key);
-      var value = unwrap(this).get(key);
-      return value === undefined_ ? undefined : value;
-    }
-
-    function set(key, value){
-      validate(key);
-      // store a token for explicit undefined so that "has" works correctly
-      unwrap(this).set(key, value === undefined ? undefined_ : value);
-    }
-
-    function has(key){
-      validate(key);
-      return unwrap(this).get(key) !== undefined;
-    }
-
-    function delete_(key){
-      validate(key);
-      var data = unwrap(this),
-          had = data.get(key) !== undefined;
-      data.set(key, undefined);
-      return had;
-    }
-
-    function toString(){
-      unwrap(this);
-      return '[object WeakMap]';
-    }
-
-    try {
-      var src = ('return '+delete_).replace('e_', '\\u0065'),
-          del = new Function('unwrap', 'validate', src)(unwrap, validate);
-    } catch (e) {
-      var del = delete_;
-    }
-
-    var src = (''+Object).split('Object');
-    var stringifier = function toString(){
-      return src[0] + nameOf(this) + src[1];
-    };
-
-    define(stringifier, stringifier);
-
-    var prep = { __proto__: [] } instanceof Array
-      ? function(f){ f.__proto__ = stringifier }
-      : function(f){ define(f, stringifier) };
-
-    prep(WeakMap);
-
-    [toString, get, set, has, del].forEach(function(method){
-      define(WeakMap.prototype, method);
-      prep(method);
-    });
-
-    return WeakMap;
-  }(new Data));
-
-  var defaultCreator = Object.create
-    ? function(){ return Object.create(null) }
-    : function(){ return {} };
-
-  function createStorage(creator){
-    var weakmap = new WM;
-    creator || (creator = defaultCreator);
-
-    function storage(object, value){
-      if (value || arguments.length === 2) {
-        weakmap.set(object, value);
-      } else {
-        value = weakmap.get(object);
-        if (value === undefined) {
-          value = creator(object);
-          weakmap.set(object, value);
-        }
-      }
-      return value;
-    }
-
-    return storage;
-  }
-
-
-  if (typeof module !== 'undefined') {
-    module.exports = WM;
-  } else if (typeof exports !== 'undefined') {
-    exports.WeakMap = WM;
-  } else if (!('WeakMap' in global)) {
-    global.WeakMap = WM;
-  }
-
-  WM.createStorage = createStorage;
-  if (global.WeakMap)
-    global.WeakMap.createStorage = createStorage;
-}((0, eval)('this'));
-
-})()
-},{}],66:[function(require,module,exports){
+},{"bit-twiddle":52,"gl-matrix":10}],66:[function(require,module,exports){
 "use strict"
 
 var uniq = require("uniq")
@@ -18975,7 +18736,250 @@ function generateCWiseOp(proc, typesig) {
   return f()
 }
 module.exports = generateCWiseOp
-},{"uniq":89}],84:[function(require,module,exports){
+},{"uniq":89}],82:[function(require,module,exports){
+(function(){/* (The MIT License)
+ *
+ * Copyright (c) 2012 Brandon Benvie <http://bbenvie.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the 'Software'), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included with all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ * BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY  CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+// Original WeakMap implementation by Gozala @ https://gist.github.com/1269991
+// Updated and bugfixed by Raynos @ https://gist.github.com/1638059
+// Expanded by Benvie @ https://github.com/Benvie/harmony-collections
+
+void function(global, undefined_, undefined){
+  var getProps = Object.getOwnPropertyNames,
+      defProp  = Object.defineProperty,
+      toSource = Function.prototype.toString,
+      create   = Object.create,
+      hasOwn   = Object.prototype.hasOwnProperty,
+      funcName = /^\n?function\s?(\w*)?_?\(/;
+
+
+  function define(object, key, value){
+    if (typeof key === 'function') {
+      value = key;
+      key = nameOf(value).replace(/_$/, '');
+    }
+    return defProp(object, key, { configurable: true, writable: true, value: value });
+  }
+
+  function nameOf(func){
+    return typeof func !== 'function'
+          ? '' : 'name' in func
+          ? func.name : toSource.call(func).match(funcName)[1];
+  }
+
+  // ############
+  // ### Data ###
+  // ############
+
+  var Data = (function(){
+    var dataDesc = { value: { writable: true, value: undefined } },
+        datalock = 'return function(k){if(k===s)return l}',
+        uids     = create(null),
+
+        createUID = function(){
+          var key = Math.random().toString(36).slice(2);
+          return key in uids ? createUID() : uids[key] = key;
+        },
+
+        globalID = createUID(),
+
+        storage = function(obj){
+          if (hasOwn.call(obj, globalID))
+            return obj[globalID];
+
+          if (!Object.isExtensible(obj))
+            throw new TypeError("Object must be extensible");
+
+          var store = create(null);
+          defProp(obj, globalID, { value: store });
+          return store;
+        };
+
+    // common per-object storage area made visible by patching getOwnPropertyNames'
+    define(Object, function getOwnPropertyNames(obj){
+      var props = getProps(obj);
+      if (hasOwn.call(obj, globalID))
+        props.splice(props.indexOf(globalID), 1);
+      return props;
+    });
+
+    function Data(){
+      var puid = createUID(),
+          secret = {};
+
+      this.unlock = function(obj){
+        var store = storage(obj);
+        if (hasOwn.call(store, puid))
+          return store[puid](secret);
+
+        var data = create(null, dataDesc);
+        defProp(store, puid, {
+          value: new Function('s', 'l', datalock)(secret, data)
+        });
+        return data;
+      }
+    }
+
+    define(Data.prototype, function get(o){ return this.unlock(o).value });
+    define(Data.prototype, function set(o, v){ this.unlock(o).value = v });
+
+    return Data;
+  }());
+
+
+  var WM = (function(data){
+    var validate = function(key){
+      if (key == null || typeof key !== 'object' && typeof key !== 'function')
+        throw new TypeError("Invalid WeakMap key");
+    }
+
+    var wrap = function(collection, value){
+      var store = data.unlock(collection);
+      if (store.value)
+        throw new TypeError("Object is already a WeakMap");
+      store.value = value;
+    }
+
+    var unwrap = function(collection){
+      var storage = data.unlock(collection).value;
+      if (!storage)
+        throw new TypeError("WeakMap is not generic");
+      return storage;
+    }
+
+    var initialize = function(weakmap, iterable){
+      if (iterable !== null && typeof iterable === 'object' && typeof iterable.forEach === 'function') {
+        iterable.forEach(function(item, i){
+          if (item instanceof Array && item.length === 2)
+            set.call(weakmap, iterable[i][0], iterable[i][1]);
+        });
+      }
+    }
+
+
+    function WeakMap(iterable){
+      if (this === global || this == null || this === WeakMap.prototype)
+        return new WeakMap(iterable);
+
+      wrap(this, new Data);
+      initialize(this, iterable);
+    }
+
+    function get(key){
+      validate(key);
+      var value = unwrap(this).get(key);
+      return value === undefined_ ? undefined : value;
+    }
+
+    function set(key, value){
+      validate(key);
+      // store a token for explicit undefined so that "has" works correctly
+      unwrap(this).set(key, value === undefined ? undefined_ : value);
+    }
+
+    function has(key){
+      validate(key);
+      return unwrap(this).get(key) !== undefined;
+    }
+
+    function delete_(key){
+      validate(key);
+      var data = unwrap(this),
+          had = data.get(key) !== undefined;
+      data.set(key, undefined);
+      return had;
+    }
+
+    function toString(){
+      unwrap(this);
+      return '[object WeakMap]';
+    }
+
+    try {
+      var src = ('return '+delete_).replace('e_', '\\u0065'),
+          del = new Function('unwrap', 'validate', src)(unwrap, validate);
+    } catch (e) {
+      var del = delete_;
+    }
+
+    var src = (''+Object).split('Object');
+    var stringifier = function toString(){
+      return src[0] + nameOf(this) + src[1];
+    };
+
+    define(stringifier, stringifier);
+
+    var prep = { __proto__: [] } instanceof Array
+      ? function(f){ f.__proto__ = stringifier }
+      : function(f){ define(f, stringifier) };
+
+    prep(WeakMap);
+
+    [toString, get, set, has, del].forEach(function(method){
+      define(WeakMap.prototype, method);
+      prep(method);
+    });
+
+    return WeakMap;
+  }(new Data));
+
+  var defaultCreator = Object.create
+    ? function(){ return Object.create(null) }
+    : function(){ return {} };
+
+  function createStorage(creator){
+    var weakmap = new WM;
+    creator || (creator = defaultCreator);
+
+    function storage(object, value){
+      if (value || arguments.length === 2) {
+        weakmap.set(object, value);
+      } else {
+        value = weakmap.get(object);
+        if (value === undefined) {
+          value = creator(object);
+          weakmap.set(object, value);
+        }
+      }
+      return value;
+    }
+
+    return storage;
+  }
+
+
+  if (typeof module !== 'undefined') {
+    module.exports = WM;
+  } else if (typeof exports !== 'undefined') {
+    exports.WeakMap = WM;
+  } else if (!('WeakMap' in global)) {
+    global.WeakMap = WM;
+  }
+
+  WM.createStorage = createStorage;
+  if (global.WeakMap)
+    global.WeakMap.createStorage = createStorage;
+}((0, eval)('this'));
+
+})()
+},{}],84:[function(require,module,exports){
 'use strict';
 
 var arraytools  = function () {
@@ -19208,7 +19212,30 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
-},{}],89:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
+"use strict"
+
+var ndarray = require("ndarray")
+var do_convert = require("./doConvert.js")
+
+module.exports = function convert(arr, result) {
+  var shape = [], c = arr, sz = 1
+  while(c instanceof Array) {
+    shape.push(c.length)
+    sz *= c.length
+    c = c[0]
+  }
+  if(shape.length === 0) {
+    return ndarray()
+  }
+  if(!result) {
+    result = ndarray(new Float64Array(sz), shape)
+  }
+  do_convert(result, arr)
+  return result
+}
+
+},{"./doConvert.js":90,"ndarray":7}],89:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -19267,30 +19294,7 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
-},{}],73:[function(require,module,exports){
-"use strict"
-
-var ndarray = require("ndarray")
-var do_convert = require("./doConvert.js")
-
-module.exports = function convert(arr, result) {
-  var shape = [], c = arr, sz = 1
-  while(c instanceof Array) {
-    shape.push(c.length)
-    sz *= c.length
-    c = c[0]
-  }
-  if(shape.length === 0) {
-    return ndarray()
-  }
-  if(!result) {
-    result = ndarray(new Float64Array(sz), shape)
-  }
-  do_convert(result, arr)
-  return result
-}
-
-},{"./doConvert.js":90,"ndarray":7}],75:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 'use strict'
 
 module.exports      = gradient
@@ -20364,7 +20368,7 @@ function vectorizeText(str, canvas, context, options) {
     }
   }
 }
-},{"simplify-planar-graph":101,"planar-graph-to-polyline":102,"triangulate-polyline":103,"surface-nets":74,"ndarray":7}],85:[function(require,module,exports){
+},{"planar-graph-to-polyline":101,"simplify-planar-graph":102,"triangulate-polyline":103,"surface-nets":74,"ndarray":7}],85:[function(require,module,exports){
 "use strict"
 
 var pool = require("typedarray-pool")
@@ -20780,7 +20784,7 @@ function createSurfaceExtractor(args) {
     order,
     typesig)
 }
-},{"typedarray-pool":32}],101:[function(require,module,exports){
+},{"typedarray-pool":32}],102:[function(require,module,exports){
 "use strict"
 
 module.exports = simplifyPolygon
@@ -21052,56 +21056,7 @@ function simplifyPolygon(cells, positions, minArea) {
     edges: ncells
   }
 }
-},{"robust-orientation":104,"simplicial-complex":105}],99:[function(require,module,exports){
-"use strict"
-
-var compile = require("./compile.js")
-
-function createThunk(proc) {
-  var code = ["'use strict'", "var CACHED={}"]
-  var vars = []
-  var thunkName = proc.funcName + "_cwise_thunk"
-  
-  //Build thunk
-  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
-  var typesig = []
-  var string_typesig = []
-  var proc_args = [["array",proc.arrayArgs[0],".shape"].join("")]
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    var j = proc.arrayArgs[i]
-    vars.push(["t", j, "=array", j, ".dtype,",
-               "r", j, "=array", j, ".order"].join(""))
-    typesig.push("t" + j)
-    typesig.push("r" + j)
-    string_typesig.push("t"+j)
-    string_typesig.push("r"+j+".join()")
-    proc_args.push("array" + j + ".data")
-    proc_args.push("array" + j + ".stride")
-    proc_args.push("array" + j + ".offset|0")
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    proc_args.push("scalar" + proc.scalarArgs[i])
-  }
-  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
-  vars.push("proc=CACHED[type]")
-  code.push("var " + vars.join(","))
-  
-  code.push(["if(!proc){",
-             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
-             "return proc(", proc_args.join(","), ")}"].join(""))
-
-  if(proc.debug) {
-    console.log("Generated thunk:", code.join("\n"))
-  }
-  
-  //Compile thunk
-  var thunk = new Function("compile", code.join("\n"))
-  return thunk(compile.bind(undefined, proc))
-}
-
-module.exports = createThunk
-
-},{"./compile.js":106}],103:[function(require,module,exports){
+},{"robust-orientation":104,"simplicial-complex":105}],103:[function(require,module,exports){
 "use strict"
 
 module.exports = triangulatePolyline
@@ -21166,7 +21121,56 @@ function triangulatePolyline(loops, positions) {
     ]
   })
 }
-},{"poly2tri":107}],92:[function(require,module,exports){
+},{"poly2tri":106}],99:[function(require,module,exports){
+"use strict"
+
+var compile = require("./compile.js")
+
+function createThunk(proc) {
+  var code = ["'use strict'", "var CACHED={}"]
+  var vars = []
+  var thunkName = proc.funcName + "_cwise_thunk"
+  
+  //Build thunk
+  code.push(["return function ", thunkName, "(", proc.shimArgs.join(","), "){"].join(""))
+  var typesig = []
+  var string_typesig = []
+  var proc_args = [["array",proc.arrayArgs[0],".shape"].join("")]
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    var j = proc.arrayArgs[i]
+    vars.push(["t", j, "=array", j, ".dtype,",
+               "r", j, "=array", j, ".order"].join(""))
+    typesig.push("t" + j)
+    typesig.push("r" + j)
+    string_typesig.push("t"+j)
+    string_typesig.push("r"+j+".join()")
+    proc_args.push("array" + j + ".data")
+    proc_args.push("array" + j + ".stride")
+    proc_args.push("array" + j + ".offset|0")
+  }
+  for(var i=0; i<proc.scalarArgs.length; ++i) {
+    proc_args.push("scalar" + proc.scalarArgs[i])
+  }
+  vars.push(["type=[", string_typesig.join(","), "].join()"].join(""))
+  vars.push("proc=CACHED[type]")
+  code.push("var " + vars.join(","))
+  
+  code.push(["if(!proc){",
+             "CACHED[type]=proc=compile([", typesig.join(","), "])}",
+             "return proc(", proc_args.join(","), ")}"].join(""))
+
+  if(proc.debug) {
+    console.log("Generated thunk:", code.join("\n"))
+  }
+  
+  //Compile thunk
+  var thunk = new Function("compile", code.join("\n"))
+  return thunk(compile.bind(undefined, proc))
+}
+
+module.exports = createThunk
+
+},{"./compile.js":107}],92:[function(require,module,exports){
 "use strict"
 
 var uniq = require("uniq")
@@ -21827,7 +21831,7 @@ function invertPermutation(pi, result) {
 }
 
 module.exports = invertPermutation
-},{}],107:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 (function(global){/*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -22003,7 +22007,9 @@ function compileCwise(user_args) {
 
 module.exports = compileCwise
 
-},{"./lib/thunk.js":120}],100:[function(require,module,exports){
+},{"./lib/thunk.js":120}],114:[function(require,module,exports){
+module.exports={"version": "1.3.3"}
+},{}],100:[function(require,module,exports){
 "use strict"
 
 var uniq = require("uniq")
@@ -22291,9 +22297,7 @@ function generateCWiseOp(proc, typesig) {
   return f()
 }
 module.exports = generateCWiseOp
-},{"uniq":121}],114:[function(require,module,exports){
-module.exports={"version": "1.3.3"}
-},{}],102:[function(require,module,exports){
+},{"uniq":121}],101:[function(require,module,exports){
 "use strict"
 
 module.exports = planarGraphToPolyline
@@ -22476,7 +22480,138 @@ function planarGraphToPolyline(edges, positions) {
 
   return result
 }
-},{"edges-to-adjacency-list":122,"planar-dual":123,"point-in-big-polygon":124,"two-product":109,"robust-sum":110,"uniq":111,"dup":53}],104:[function(require,module,exports){
+},{"edges-to-adjacency-list":122,"planar-dual":123,"point-in-big-polygon":124,"two-product":109,"robust-sum":110,"uniq":111,"dup":53}],123:[function(require,module,exports){
+"use strict"
+
+module.exports = planarDual
+
+var compareAngle = require("compare-angle")
+
+function planarDual(cells, positions) {
+
+  var numVertices = positions.length|0
+  var numEdges = cells.length
+  var adj = [new Array(numVertices), new Array(numVertices)]
+  for(var i=0; i<numVertices; ++i) {
+    adj[0][i] = []
+    adj[1][i] = []
+  }
+  for(var i=0; i<numEdges; ++i) {
+    var c = cells[i]
+    adj[0][c[0]].push(c)
+    adj[1][c[1]].push(c)
+  }
+
+  var cycles = []
+
+  //Add isolated vertices as trivial case
+  for(var i=0; i<numVertices; ++i) {
+    if(adj[0][i].length + adj[1][i].length === 0) {
+      cycles.push( [i] )
+    }
+  }
+
+  //Remove a half edge
+  function cut(c, i) {
+    var a = adj[i][c[i]]
+    a.splice(a.indexOf(c), 1)
+  }
+
+  //Find next vertex and cut edge
+  function next(a, b, noCut) {
+    var nextCell, nextVertex, nextDir
+    for(var i=0; i<2; ++i) {
+      if(adj[i][b].length > 0) {
+        nextCell = adj[i][b][0]
+        nextDir = i
+        break
+      }
+    }
+    nextVertex = nextCell[nextDir^1]
+
+    for(var dir=0; dir<2; ++dir) {
+      var nbhd = adj[dir][b]
+      for(var k=0; k<nbhd.length; ++k) {
+        var e = nbhd[k]
+        var p = e[dir^1]
+        var cmp = compareAngle(
+            positions[a], 
+            positions[b], 
+            positions[nextVertex],
+            positions[p])
+        if(cmp > 0) {
+          nextCell = e
+          nextVertex = p
+          nextDir = dir
+        }
+      }
+    }
+    if(noCut) {
+      return nextVertex
+    }
+    if(nextCell) {
+      cut(nextCell, nextDir)
+    }
+    return nextVertex
+  }
+
+  function extractCycle(v, dir) {
+    var e0 = adj[dir][v][0]
+    var cycle = [v]
+    cut(e0, dir)
+    var u = e0[dir^1]
+    var d0 = dir
+    while(true) {
+      while(u !== v) {
+        cycle.push(u)
+        u = next(cycle[cycle.length-2], u, false)
+      }
+      if(adj[0][v].length + adj[1][v].length === 0) {
+        break
+      }
+      var a = cycle[cycle.length-1]
+      var b = v
+      var c = cycle[1]
+      var d = next(a, b, true)
+      if(compareAngle(positions[a], positions[b], positions[c], positions[d]) < 0) {
+        break
+      }
+      cycle.push(v)
+      u = next(a, b)
+    }
+    return cycle
+  }
+
+  function shouldGlue(pcycle, ncycle) {
+    return (ncycle[1] === ncycle[ncycle.length-1])
+  }
+
+  for(var i=0; i<numVertices; ++i) {
+    for(var j=0; j<2; ++j) {
+      var pcycle = []
+      while(adj[j][i].length > 0) {
+        var ni = adj[0][i].length
+        var ncycle = extractCycle(i,j)
+        if(shouldGlue(pcycle, ncycle)) {
+          //Glue together trivial cycles
+          pcycle.push.apply(pcycle, ncycle)
+        } else {
+          if(pcycle.length > 0) {
+            cycles.push(pcycle)
+          }
+          pcycle = ncycle
+        }
+      }
+      if(pcycle.length > 0) {
+        cycles.push(pcycle)
+      }
+    }
+  }
+
+  //Combine paths and loops together
+  return cycles
+}
+},{"compare-angle":125}],104:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -22667,138 +22802,7 @@ function generateOrientationProc() {
 }
 
 generateOrientationProc()
-},{"two-product":125,"robust-sum":126,"robust-scale":127,"robust-subtract":128}],123:[function(require,module,exports){
-"use strict"
-
-module.exports = planarDual
-
-var compareAngle = require("compare-angle")
-
-function planarDual(cells, positions) {
-
-  var numVertices = positions.length|0
-  var numEdges = cells.length
-  var adj = [new Array(numVertices), new Array(numVertices)]
-  for(var i=0; i<numVertices; ++i) {
-    adj[0][i] = []
-    adj[1][i] = []
-  }
-  for(var i=0; i<numEdges; ++i) {
-    var c = cells[i]
-    adj[0][c[0]].push(c)
-    adj[1][c[1]].push(c)
-  }
-
-  var cycles = []
-
-  //Add isolated vertices as trivial case
-  for(var i=0; i<numVertices; ++i) {
-    if(adj[0][i].length + adj[1][i].length === 0) {
-      cycles.push( [i] )
-    }
-  }
-
-  //Remove a half edge
-  function cut(c, i) {
-    var a = adj[i][c[i]]
-    a.splice(a.indexOf(c), 1)
-  }
-
-  //Find next vertex and cut edge
-  function next(a, b, noCut) {
-    var nextCell, nextVertex, nextDir
-    for(var i=0; i<2; ++i) {
-      if(adj[i][b].length > 0) {
-        nextCell = adj[i][b][0]
-        nextDir = i
-        break
-      }
-    }
-    nextVertex = nextCell[nextDir^1]
-
-    for(var dir=0; dir<2; ++dir) {
-      var nbhd = adj[dir][b]
-      for(var k=0; k<nbhd.length; ++k) {
-        var e = nbhd[k]
-        var p = e[dir^1]
-        var cmp = compareAngle(
-            positions[a], 
-            positions[b], 
-            positions[nextVertex],
-            positions[p])
-        if(cmp > 0) {
-          nextCell = e
-          nextVertex = p
-          nextDir = dir
-        }
-      }
-    }
-    if(noCut) {
-      return nextVertex
-    }
-    if(nextCell) {
-      cut(nextCell, nextDir)
-    }
-    return nextVertex
-  }
-
-  function extractCycle(v, dir) {
-    var e0 = adj[dir][v][0]
-    var cycle = [v]
-    cut(e0, dir)
-    var u = e0[dir^1]
-    var d0 = dir
-    while(true) {
-      while(u !== v) {
-        cycle.push(u)
-        u = next(cycle[cycle.length-2], u, false)
-      }
-      if(adj[0][v].length + adj[1][v].length === 0) {
-        break
-      }
-      var a = cycle[cycle.length-1]
-      var b = v
-      var c = cycle[1]
-      var d = next(a, b, true)
-      if(compareAngle(positions[a], positions[b], positions[c], positions[d]) < 0) {
-        break
-      }
-      cycle.push(v)
-      u = next(a, b)
-    }
-    return cycle
-  }
-
-  function shouldGlue(pcycle, ncycle) {
-    return (ncycle[1] === ncycle[ncycle.length-1])
-  }
-
-  for(var i=0; i<numVertices; ++i) {
-    for(var j=0; j<2; ++j) {
-      var pcycle = []
-      while(adj[j][i].length > 0) {
-        var ni = adj[0][i].length
-        var ncycle = extractCycle(i,j)
-        if(shouldGlue(pcycle, ncycle)) {
-          //Glue together trivial cycles
-          pcycle.push.apply(pcycle, ncycle)
-        } else {
-          if(pcycle.length > 0) {
-            cycles.push(pcycle)
-          }
-          pcycle = ncycle
-        }
-      }
-      if(pcycle.length > 0) {
-        cycles.push(pcycle)
-      }
-    }
-  }
-
-  //Combine paths and loops together
-  return cycles
-}
-},{"compare-angle":129}],121:[function(require,module,exports){
+},{"two-product":126,"robust-sum":127,"robust-scale":128,"robust-subtract":129}],121:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -22996,7 +23000,7 @@ function unrank(n, r, p) {
 exports.rank = rank
 exports.unrank = unrank
 
-},{"invert-permutation":113,"typedarray-pool":32}],125:[function(require,module,exports){
+},{"invert-permutation":113,"typedarray-pool":32}],126:[function(require,module,exports){
 "use strict"
 
 module.exports = twoProduct
@@ -23030,7 +23034,7 @@ function twoProduct(a, b, result) {
 
   return [ y, x ]
 }
-},{}],126:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 "use strict"
 
 module.exports = linearExpansionSum
@@ -23187,7 +23191,7 @@ function linearExpansionSum(e, f) {
   g.length = count
   return g
 }
-},{}],128:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 "use strict"
 
 module.exports = robustSubtract
@@ -23522,291 +23526,47 @@ function preprocessPolygon(loops, orientation) {
   //Return classification function
   return createClassifyPoint(segments, slabs, outside, orientation)
 }
-},{"slab-decomposition":131,"robust-orientation":132}],106:[function(require,module,exports){
-"use strict"
+},{"slab-decomposition":131,"robust-orientation":132}],115:[function(require,module,exports){
+/*
+ * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
+ * http://code.google.com/p/poly2tri/
+ * 
+ * poly2tri.js (JavaScript port) (c) 2009-2013, Poly2Tri Contributors
+ * https://github.com/r3mi/poly2tri.js
+ * 
+ * All rights reserved.
+ * 
+ * Distributed under the 3-clause BSD License, see LICENSE.txt
+ */
 
-var uniq = require("uniq")
+"use strict";
 
-function innerFill(order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , has_index = proc.indexArgs.length>0
-    , code = []
-    , vars = []
-    , idx=0, pidx=0, i, j
-  for(i=0; i<dimension; ++i) {
-    vars.push(["i",i,"=0"].join(""))
-  }
-  //Compute scan deltas
-  for(j=0; j<nargs; ++j) {
-    for(i=0; i<dimension; ++i) {
-      pidx = idx
-      idx = order[i]
-      if(i === 0) {
-        vars.push(["d",j,"s",i,"=t",j,"[",idx,"]"].join(""))
-      } else {
-        vars.push(["d",j,"s",i,"=(t",j,"[",idx,"]-s",pidx,"*t",j,"[",pidx,"])"].join(""))
-      }
-    }
-  }
-  code.push("var " + vars.join(","))
-  //Scan loop
-  for(i=dimension-1; i>=0; --i) {
-    idx = order[i]
-    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
-  }
-  //Push body of inner loop
-  code.push(body)
-  //Advance scan pointers
-  for(i=0; i<dimension; ++i) {
-    pidx = idx
-    idx = order[i]
-    for(j=0; j<nargs; ++j) {
-      code.push(["p",j,"+=d",j,"s",i].join(""))
-    }
-    if(has_index) {
-      if(i > 0) {
-        code.push(["index[",pidx,"]-=s",pidx].join(""))
-      }
-      code.push(["++index[",idx,"]"].join(""))
-    }
-    code.push("}")
-  }
-  return code.join("\n")
-}
+/*
+ * Class added in the JavaScript version (was not present in the c++ version)
+ */
 
-function outerFill(matched, order, proc, body) {
-  var dimension = order.length
-    , nargs = proc.arrayArgs.length
-    , blockSize = proc.blockSize
-    , has_index = proc.indexArgs.length > 0
-    , code = []
-  for(var i=0; i<nargs; ++i) {
-    code.push(["var offset",i,"=p",i].join(""))
-  }
-  //Generate matched loops
-  for(var i=matched; i<dimension; ++i) {
-    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join(""))
-    code.push(["if(j",i,"<",blockSize,"){"].join(""))
-    code.push(["s",order[i],"=j",i].join(""))
-    code.push(["j",i,"=0"].join(""))
-    code.push(["}else{s",order[i],"=",blockSize].join(""))
-    code.push(["j",i,"-=",blockSize,"}"].join(""))
-    if(has_index) {
-      code.push(["index[",order[i],"]=j",i].join(""))
-    }
-  }
-  for(var i=0; i<nargs; ++i) {
-    var indexStr = ["offset"+i]
-    for(var j=matched; j<dimension; ++j) {
-      indexStr.push(["j",j,"*t",i,"[",order[j],"]"].join(""))
-    }
-    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
-  }
-  code.push(innerFill(order, proc, body))
-  for(var i=matched; i<dimension; ++i) {
-    code.push("}")
-  }
-  return code.join("\n")
-}
+var xy = require('./xy');
 
-//Count the number of compatible inner orders
-function countMatches(orders) {
-  var matched = 0, dimension = orders[0].length
-  while(matched < dimension) {
-    for(var j=1; j<orders.length; ++j) {
-      if(orders[j][matched] !== orders[0][matched]) {
-        return matched
-      }
+/**
+ * Custom exception class to indicate invalid Point values
+ * @param {String} message          error message
+ * @param {array<Point>} points     invalid points
+ */
+var PointError = function(message, points) {
+    this.name = "PointError";
+    this.points = points = points || [];
+    this.message = message || "Invalid Points!";
+    for (var i = 0; i < points.length; i++) {
+        this.message += " " + xy.toString(points[i]);
     }
-    ++matched
-  }
-  return matched
-}
+};
+PointError.prototype = new Error();
+PointError.prototype.constructor = PointError;
 
-//Processes a block according to the given data types
-function processBlock(block, proc, dtypes) {
-  var code = block.body
-  var pre = []
-  var post = []
-  for(var i=0; i<block.args.length; ++i) {
-    var carg = block.args[i]
-    if(carg.count <= 0) {
-      continue
-    }
-    var re = new RegExp(carg.name, "g")
-    var ptrStr = ""
-    var arrNum = proc.arrayArgs.indexOf(i)
-    switch(proc.argTypes[i]) {
-      case "offset":
-        var offArgIndex = proc.offsetArgIndex.indexOf(i)
-        var offArg = proc.offsetArgs[offArgIndex]
-        arrNum = offArg.array
-        ptrStr = "+q" + offArgIndex
-      case "array":
-        ptrStr = "p" + arrNum + ptrStr
-        var localStr = "l" + i
-        var arrStr = "a" + arrNum
-        if(carg.count === 1) {
-          if(dtypes[arrNum] === "generic") {
-            if(carg.lvalue) {
-              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
-              code = code.replace(re, localStr)
-              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-            } else {
-              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
-            }
-          } else {
-            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
-          }
-        } else if(dtypes[arrNum] === "generic") {
-          pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
-          code = code.replace(re, localStr)
-          if(carg.lvalue) {
-            post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
-          }
-        } else {
-          pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join(""))
-          code = code.replace(re, localStr)
-          if(carg.lvalue) {
-            post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
-          }
-        }
-      break
-      case "scalar":
-        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
-      break
-      case "index":
-        code = code.replace(re, "index")
-      break
-      case "shape":
-        code = code.replace(re, "shape")
-      break
-    }
-  }
-  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
-}
 
-function typeSummary(dtypes) {
-  var summary = new Array(dtypes.length)
-  var allEqual = true
-  for(var i=0; i<dtypes.length; ++i) {
-    var t = dtypes[i]
-    var digits = t.match(/\d+/)
-    if(!digits) {
-      digits = ""
-    } else {
-      digits = digits[0]
-    }
-    if(t.charAt(0) === 0) {
-      summary[i] = "u" + t.charAt(1) + digits
-    } else {
-      summary[i] = t.charAt(0) + digits
-    }
-    if(i > 0) {
-      allEqual = allEqual && summary[i] === summary[i-1]
-    }
-  }
-  if(allEqual) {
-    return summary[0]
-  }
-  return summary.join("")
-}
+module.exports = PointError;
 
-//Generates a cwise operator
-function generateCWiseOp(proc, typesig) {
-
-  //Compute dimension
-  var dimension = typesig[1].length|0
-  var orders = new Array(proc.arrayArgs.length)
-  var dtypes = new Array(proc.arrayArgs.length)
-
-  //First create arguments for procedure
-  var arglist = ["SS"]
-  var code = ["'use strict'"]
-  var vars = []
-  
-  for(var j=0; j<dimension; ++j) {
-    vars.push(["s", j, "=SS[", j, "]"].join(""))
-  }
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    arglist.push("a"+i)
-    arglist.push("t"+i)
-    arglist.push("p"+i)
-    dtypes[i] = typesig[2*i]
-    orders[i] = typesig[2*i+1]
-  }
-  for(var i=0; i<proc.scalarArgs.length; ++i) {
-    arglist.push("Y" + i)
-  }
-  if(proc.shapeArgs.length > 0) {
-    vars.push("shape=SS.slice(0)")
-  }
-  if(proc.indexArgs.length > 0) {
-    var zeros = new Array(dimension)
-    for(var i=0; i<dimension; ++i) {
-      zeros[i] = "0"
-    }
-    vars.push(["index=[", zeros.join(","), "]"].join(""))
-  }
-  for(var i=0; i<proc.offsetArgs.length; ++i) {
-    var off_arg = proc.offsetArgs[i]
-    var init_string = []
-    for(var j=0; j<off_arg.offset.length; ++j) {
-      if(off_arg.offset[j] === 0) {
-        continue
-      } else if(off_arg.offset[j] === 1) {
-        init_string.push(["t", off_arg.array, "[", j, "]"].join(""))      
-      } else {
-        init_string.push([off_arg.offset[j], "*t", off_arg.array, "[", j, "]"].join(""))
-      }
-    }
-    if(init_string.length === 0) {
-      vars.push("q" + i + "=0")
-    } else {
-      vars.push(["q", i, "=(", init_string.join("+"),")|0"].join(""))
-    }
-  }
-
-  //Prepare this variables
-  var thisVars = uniq([].concat(proc.pre.thisVars)
-                      .concat(proc.body.thisVars)
-                      .concat(proc.post.thisVars))
-  vars = vars.concat(thisVars)
-  code.push("var " + vars.join(","))
-  for(var i=0; i<proc.arrayArgs.length; ++i) {
-    code.push("p"+i+"|=0")
-  }
-  
-  //Inline prelude
-  if(proc.pre.body.length > 3) {
-    code.push(processBlock(proc.pre, proc, dtypes))
-  }
-
-  //Process body
-  var body = processBlock(proc.body, proc, dtypes)
-  var matched = countMatches(orders)
-  if(matched < dimension) {
-    code.push(outerFill(matched, orders[0], proc, body))
-  } else {
-    code.push(innerFill(orders[0], proc, body))
-  }
-
-  //Inline epilog
-  if(proc.post.body.length > 3) {
-    code.push(processBlock(proc.post, proc, dtypes))
-  }
-  
-  if(proc.debug) {
-    console.log("Generated cwise routine for ", typesig, ":\n\n", code.join("\n"))
-  }
-  
-  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
-  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
-  return f()
-}
-module.exports = generateCWiseOp
-},{"uniq":133}],116:[function(require,module,exports){
+},{"./xy":133}],116:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -24043,47 +23803,7 @@ Point.dot = function(a, b) {
 
 module.exports = Point;
 
-},{"./xy":134}],115:[function(require,module,exports){
-/*
- * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
- * http://code.google.com/p/poly2tri/
- * 
- * poly2tri.js (JavaScript port) (c) 2009-2013, Poly2Tri Contributors
- * https://github.com/r3mi/poly2tri.js
- * 
- * All rights reserved.
- * 
- * Distributed under the 3-clause BSD License, see LICENSE.txt
- */
-
-"use strict";
-
-/*
- * Class added in the JavaScript version (was not present in the c++ version)
- */
-
-var xy = require('./xy');
-
-/**
- * Custom exception class to indicate invalid Point values
- * @param {String} message          error message
- * @param {array<Point>} points     invalid points
- */
-var PointError = function(message, points) {
-    this.name = "PointError";
-    this.points = points = points || [];
-    this.message = message || "Invalid Points!";
-    for (var i = 0; i < points.length; i++) {
-        this.message += " " + xy.toString(points[i]);
-    }
-};
-PointError.prototype = new Error();
-PointError.prototype.constructor = PointError;
-
-
-module.exports = PointError;
-
-},{"./xy":134}],117:[function(require,module,exports){
+},{"./xy":133}],117:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -24522,7 +24242,7 @@ Triangle.prototype.markConstrainedEdgeByPoints = function(p, q) {
 
 module.exports = Triangle;
 
-},{"./xy":134}],118:[function(require,module,exports){
+},{"./xy":133}],118:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -24882,7 +24602,7 @@ SweepContext.prototype.meshClean = function(triangle) {
 
 module.exports = SweepContext;
 
-},{"./pointerror":115,"./point":116,"./triangle":117,"./sweep":119,"./advancingfront":135}],119:[function(require,module,exports){
+},{"./pointerror":115,"./point":116,"./triangle":117,"./sweep":119,"./advancingfront":134}],119:[function(require,module,exports){
 (function(){/*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -25736,7 +25456,291 @@ function flipScanEdgeEvent(tcx, ep, eq, flip_triangle, t, p) {
 exports.triangulate = triangulate;
 
 })()
-},{"./pointerror":115,"./triangle":117,"./advancingfront":135,"./utils":136}],120:[function(require,module,exports){
+},{"./pointerror":115,"./triangle":117,"./advancingfront":134,"./utils":135}],107:[function(require,module,exports){
+"use strict"
+
+var uniq = require("uniq")
+
+function innerFill(order, proc, body) {
+  var dimension = order.length
+    , nargs = proc.arrayArgs.length
+    , has_index = proc.indexArgs.length>0
+    , code = []
+    , vars = []
+    , idx=0, pidx=0, i, j
+  for(i=0; i<dimension; ++i) {
+    vars.push(["i",i,"=0"].join(""))
+  }
+  //Compute scan deltas
+  for(j=0; j<nargs; ++j) {
+    for(i=0; i<dimension; ++i) {
+      pidx = idx
+      idx = order[i]
+      if(i === 0) {
+        vars.push(["d",j,"s",i,"=t",j,"[",idx,"]"].join(""))
+      } else {
+        vars.push(["d",j,"s",i,"=(t",j,"[",idx,"]-s",pidx,"*t",j,"[",pidx,"])"].join(""))
+      }
+    }
+  }
+  code.push("var " + vars.join(","))
+  //Scan loop
+  for(i=dimension-1; i>=0; --i) {
+    idx = order[i]
+    code.push(["for(i",i,"=0;i",i,"<s",idx,";++i",i,"){"].join(""))
+  }
+  //Push body of inner loop
+  code.push(body)
+  //Advance scan pointers
+  for(i=0; i<dimension; ++i) {
+    pidx = idx
+    idx = order[i]
+    for(j=0; j<nargs; ++j) {
+      code.push(["p",j,"+=d",j,"s",i].join(""))
+    }
+    if(has_index) {
+      if(i > 0) {
+        code.push(["index[",pidx,"]-=s",pidx].join(""))
+      }
+      code.push(["++index[",idx,"]"].join(""))
+    }
+    code.push("}")
+  }
+  return code.join("\n")
+}
+
+function outerFill(matched, order, proc, body) {
+  var dimension = order.length
+    , nargs = proc.arrayArgs.length
+    , blockSize = proc.blockSize
+    , has_index = proc.indexArgs.length > 0
+    , code = []
+  for(var i=0; i<nargs; ++i) {
+    code.push(["var offset",i,"=p",i].join(""))
+  }
+  //Generate matched loops
+  for(var i=matched; i<dimension; ++i) {
+    code.push(["for(var j"+i+"=SS[", order[i], "]|0;j", i, ">0;){"].join(""))
+    code.push(["if(j",i,"<",blockSize,"){"].join(""))
+    code.push(["s",order[i],"=j",i].join(""))
+    code.push(["j",i,"=0"].join(""))
+    code.push(["}else{s",order[i],"=",blockSize].join(""))
+    code.push(["j",i,"-=",blockSize,"}"].join(""))
+    if(has_index) {
+      code.push(["index[",order[i],"]=j",i].join(""))
+    }
+  }
+  for(var i=0; i<nargs; ++i) {
+    var indexStr = ["offset"+i]
+    for(var j=matched; j<dimension; ++j) {
+      indexStr.push(["j",j,"*t",i,"[",order[j],"]"].join(""))
+    }
+    code.push(["p",i,"=(",indexStr.join("+"),")"].join(""))
+  }
+  code.push(innerFill(order, proc, body))
+  for(var i=matched; i<dimension; ++i) {
+    code.push("}")
+  }
+  return code.join("\n")
+}
+
+//Count the number of compatible inner orders
+function countMatches(orders) {
+  var matched = 0, dimension = orders[0].length
+  while(matched < dimension) {
+    for(var j=1; j<orders.length; ++j) {
+      if(orders[j][matched] !== orders[0][matched]) {
+        return matched
+      }
+    }
+    ++matched
+  }
+  return matched
+}
+
+//Processes a block according to the given data types
+function processBlock(block, proc, dtypes) {
+  var code = block.body
+  var pre = []
+  var post = []
+  for(var i=0; i<block.args.length; ++i) {
+    var carg = block.args[i]
+    if(carg.count <= 0) {
+      continue
+    }
+    var re = new RegExp(carg.name, "g")
+    var ptrStr = ""
+    var arrNum = proc.arrayArgs.indexOf(i)
+    switch(proc.argTypes[i]) {
+      case "offset":
+        var offArgIndex = proc.offsetArgIndex.indexOf(i)
+        var offArg = proc.offsetArgs[offArgIndex]
+        arrNum = offArg.array
+        ptrStr = "+q" + offArgIndex
+      case "array":
+        ptrStr = "p" + arrNum + ptrStr
+        var localStr = "l" + i
+        var arrStr = "a" + arrNum
+        if(carg.count === 1) {
+          if(dtypes[arrNum] === "generic") {
+            if(carg.lvalue) {
+              pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
+              code = code.replace(re, localStr)
+              post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
+            } else {
+              code = code.replace(re, [arrStr, ".get(", ptrStr, ")"].join(""))
+            }
+          } else {
+            code = code.replace(re, [arrStr, "[", ptrStr, "]"].join(""))
+          }
+        } else if(dtypes[arrNum] === "generic") {
+          pre.push(["var ", localStr, "=", arrStr, ".get(", ptrStr, ")"].join(""))
+          code = code.replace(re, localStr)
+          if(carg.lvalue) {
+            post.push([arrStr, ".set(", ptrStr, ",", localStr,")"].join(""))
+          }
+        } else {
+          pre.push(["var ", localStr, "=", arrStr, "[", ptrStr, "]"].join(""))
+          code = code.replace(re, localStr)
+          if(carg.lvalue) {
+            post.push([arrStr, "[", ptrStr, "]=", localStr].join(""))
+          }
+        }
+      break
+      case "scalar":
+        code = code.replace(re, "Y" + proc.scalarArgs.indexOf(i))
+      break
+      case "index":
+        code = code.replace(re, "index")
+      break
+      case "shape":
+        code = code.replace(re, "shape")
+      break
+    }
+  }
+  return [pre.join("\n"), code, post.join("\n")].join("\n").trim()
+}
+
+function typeSummary(dtypes) {
+  var summary = new Array(dtypes.length)
+  var allEqual = true
+  for(var i=0; i<dtypes.length; ++i) {
+    var t = dtypes[i]
+    var digits = t.match(/\d+/)
+    if(!digits) {
+      digits = ""
+    } else {
+      digits = digits[0]
+    }
+    if(t.charAt(0) === 0) {
+      summary[i] = "u" + t.charAt(1) + digits
+    } else {
+      summary[i] = t.charAt(0) + digits
+    }
+    if(i > 0) {
+      allEqual = allEqual && summary[i] === summary[i-1]
+    }
+  }
+  if(allEqual) {
+    return summary[0]
+  }
+  return summary.join("")
+}
+
+//Generates a cwise operator
+function generateCWiseOp(proc, typesig) {
+
+  //Compute dimension
+  var dimension = typesig[1].length|0
+  var orders = new Array(proc.arrayArgs.length)
+  var dtypes = new Array(proc.arrayArgs.length)
+
+  //First create arguments for procedure
+  var arglist = ["SS"]
+  var code = ["'use strict'"]
+  var vars = []
+  
+  for(var j=0; j<dimension; ++j) {
+    vars.push(["s", j, "=SS[", j, "]"].join(""))
+  }
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    arglist.push("a"+i)
+    arglist.push("t"+i)
+    arglist.push("p"+i)
+    dtypes[i] = typesig[2*i]
+    orders[i] = typesig[2*i+1]
+  }
+  for(var i=0; i<proc.scalarArgs.length; ++i) {
+    arglist.push("Y" + i)
+  }
+  if(proc.shapeArgs.length > 0) {
+    vars.push("shape=SS.slice(0)")
+  }
+  if(proc.indexArgs.length > 0) {
+    var zeros = new Array(dimension)
+    for(var i=0; i<dimension; ++i) {
+      zeros[i] = "0"
+    }
+    vars.push(["index=[", zeros.join(","), "]"].join(""))
+  }
+  for(var i=0; i<proc.offsetArgs.length; ++i) {
+    var off_arg = proc.offsetArgs[i]
+    var init_string = []
+    for(var j=0; j<off_arg.offset.length; ++j) {
+      if(off_arg.offset[j] === 0) {
+        continue
+      } else if(off_arg.offset[j] === 1) {
+        init_string.push(["t", off_arg.array, "[", j, "]"].join(""))      
+      } else {
+        init_string.push([off_arg.offset[j], "*t", off_arg.array, "[", j, "]"].join(""))
+      }
+    }
+    if(init_string.length === 0) {
+      vars.push("q" + i + "=0")
+    } else {
+      vars.push(["q", i, "=(", init_string.join("+"),")|0"].join(""))
+    }
+  }
+
+  //Prepare this variables
+  var thisVars = uniq([].concat(proc.pre.thisVars)
+                      .concat(proc.body.thisVars)
+                      .concat(proc.post.thisVars))
+  vars = vars.concat(thisVars)
+  code.push("var " + vars.join(","))
+  for(var i=0; i<proc.arrayArgs.length; ++i) {
+    code.push("p"+i+"|=0")
+  }
+  
+  //Inline prelude
+  if(proc.pre.body.length > 3) {
+    code.push(processBlock(proc.pre, proc, dtypes))
+  }
+
+  //Process body
+  var body = processBlock(proc.body, proc, dtypes)
+  var matched = countMatches(orders)
+  if(matched < dimension) {
+    code.push(outerFill(matched, orders[0], proc, body))
+  } else {
+    code.push(innerFill(orders[0], proc, body))
+  }
+
+  //Inline epilog
+  if(proc.post.body.length > 3) {
+    code.push(processBlock(proc.post, proc, dtypes))
+  }
+  
+  if(proc.debug) {
+    console.log("Generated cwise routine for ", typesig, ":\n\n", code.join("\n"))
+  }
+  
+  var loopName = [(proc.funcName||"unnamed"), "_cwise_loop_", orders[0].join("s"),"m",matched,typeSummary(dtypes)].join("")
+  var f = new Function(["function ",loopName,"(", arglist.join(","),"){", code.join("\n"),"} return ", loopName].join(""))
+  return f()
+}
+module.exports = generateCWiseOp
+},{"uniq":136}],120:[function(require,module,exports){
 "use strict"
 
 var compile = require("./compile.js")
@@ -25786,64 +25790,6 @@ function createThunk(proc) {
 module.exports = createThunk
 
 },{"./compile.js":137}],133:[function(require,module,exports){
-"use strict"
-
-function unique_pred(list, compare) {
-  var ptr = 1
-    , len = list.length
-    , a=list[0], b=list[0]
-  for(var i=1; i<len; ++i) {
-    b = a
-    a = list[i]
-    if(compare(a, b)) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      list[ptr++] = a
-    }
-  }
-  list.length = ptr
-  return list
-}
-
-function unique_eq(list) {
-  var ptr = 1
-    , len = list.length
-    , a=list[0], b = list[0]
-  for(var i=1; i<len; ++i, b=a) {
-    b = a
-    a = list[i]
-    if(a !== b) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      list[ptr++] = a
-    }
-  }
-  list.length = ptr
-  return list
-}
-
-function unique(list, compare, sorted) {
-  if(list.length === 0) {
-    return []
-  }
-  if(compare) {
-    if(!sorted) {
-      list.sort(compare)
-    }
-    return unique_pred(list, compare)
-  }
-  if(!sorted) {
-    list.sort()
-  }
-  return unique_eq(list)
-}
-
-module.exports = unique
-},{}],134:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -25910,7 +25856,7 @@ module.exports = {
     equals: equals
 };
 
-},{}],135:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -26057,7 +26003,7 @@ module.exports = AdvancingFront;
 module.exports.Node = Node;
 
 
-},{}],136:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 /*
  * Poly2Tri Copyright (c) 2009-2013, Poly2Tri Contributors
  * http://code.google.com/p/poly2tri/
@@ -26140,6 +26086,64 @@ module.exports = {
     inScanArea: inScanArea
 };
 
+},{}],136:[function(require,module,exports){
+"use strict"
+
+function unique_pred(list, compare) {
+  var ptr = 1
+    , len = list.length
+    , a=list[0], b=list[0]
+  for(var i=1; i<len; ++i) {
+    b = a
+    a = list[i]
+    if(compare(a, b)) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      list[ptr++] = a
+    }
+  }
+  list.length = ptr
+  return list
+}
+
+function unique_eq(list) {
+  var ptr = 1
+    , len = list.length
+    , a=list[0], b = list[0]
+  for(var i=1; i<len; ++i, b=a) {
+    b = a
+    a = list[i]
+    if(a !== b) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      list[ptr++] = a
+    }
+  }
+  list.length = ptr
+  return list
+}
+
+function unique(list, compare, sorted) {
+  if(list.length === 0) {
+    return []
+  }
+  if(compare) {
+    if(!sorted) {
+      list.sort(compare)
+    }
+    return unique_pred(list, compare)
+  }
+  if(!sorted) {
+    list.sort()
+  }
+  return unique_eq(list)
+}
+
+module.exports = unique
 },{}],138:[function(require,module,exports){
 "use strict"
 
@@ -26158,351 +26162,7 @@ function fastTwoSum(a, b, result) {
 	}
 	return [ar+br, x]
 }
-},{}],105:[function(require,module,exports){
-"use strict"; "use restrict";
-
-var bits      = require("bit-twiddle")
-  , UnionFind = require("union-find")
-
-//Returns the dimension of a cell complex
-function dimension(cells) {
-  var d = 0
-    , max = Math.max
-  for(var i=0, il=cells.length; i<il; ++i) {
-    d = max(d, cells[i].length)
-  }
-  return d-1
-}
-exports.dimension = dimension
-
-//Counts the number of vertices in faces
-function countVertices(cells) {
-  var vc = -1
-    , max = Math.max
-  for(var i=0, il=cells.length; i<il; ++i) {
-    var c = cells[i]
-    for(var j=0, jl=c.length; j<jl; ++j) {
-      vc = max(vc, c[j])
-    }
-  }
-  return vc+1
-}
-exports.countVertices = countVertices
-
-//Returns a deep copy of cells
-function cloneCells(cells) {
-  var ncells = new Array(cells.length)
-  for(var i=0, il=cells.length; i<il; ++i) {
-    ncells[i] = cells[i].slice(0)
-  }
-  return ncells
-}
-exports.cloneCells = cloneCells
-
-//Ranks a pair of cells up to permutation
-function compareCells(a, b) {
-  var n = a.length
-    , t = a.length - b.length
-    , min = Math.min
-  if(t) {
-    return t
-  }
-  switch(n) {
-    case 0:
-      return 0;
-    case 1:
-      return a[0] - b[0];
-    case 2:
-      var d = a[0]+a[1]-b[0]-b[1]
-      if(d) {
-        return d
-      }
-      return min(a[0],a[1]) - min(b[0],b[1])
-    case 3:
-      var l1 = a[0]+a[1]
-        , m1 = b[0]+b[1]
-      d = l1+a[2] - (m1+b[2])
-      if(d) {
-        return d
-      }
-      var l0 = min(a[0], a[1])
-        , m0 = min(b[0], b[1])
-        , d  = min(l0, a[2]) - min(m0, b[2])
-      if(d) {
-        return d
-      }
-      return min(l0+a[2], l1) - min(m0+b[2], m1)
-    
-    //TODO: Maybe optimize n=4 as well?
-    
-    default:
-      var as = a.slice(0)
-      as.sort()
-      var bs = b.slice(0)
-      bs.sort()
-      for(var i=0; i<n; ++i) {
-        t = as[i] - bs[i]
-        if(t) {
-          return t
-        }
-      }
-      return 0
-  }
-}
-exports.compareCells = compareCells
-
-function compareZipped(a, b) {
-  return compareCells(a[0], b[0])
-}
-
-//Puts a cell complex into normal order for the purposes of findCell queries
-function normalize(cells, attr) {
-  if(attr) {
-    var len = cells.length
-    var zipped = new Array(len)
-    for(var i=0; i<len; ++i) {
-      zipped[i] = [cells[i], attr[i]]
-    }
-    zipped.sort(compareZipped)
-    for(var i=0; i<len; ++i) {
-      cells[i] = zipped[i][0]
-      attr[i] = zipped[i][1]
-    }
-    return cells
-  } else {
-    cells.sort(compareCells)
-    return cells
-  }
-}
-exports.normalize = normalize
-
-//Removes all duplicate cells in the complex
-function unique(cells) {
-  if(cells.length === 0) {
-    return []
-  }
-  var ptr = 1
-    , len = cells.length
-  for(var i=1; i<len; ++i) {
-    var a = cells[i]
-    if(compareCells(a, cells[i-1])) {
-      if(i === ptr) {
-        ptr++
-        continue
-      }
-      cells[ptr++] = a
-    }
-  }
-  cells.length = ptr
-  return cells
-}
-exports.unique = unique;
-
-//Finds a cell in a normalized cell complex
-function findCell(cells, c) {
-  var lo = 0
-    , hi = cells.length-1
-    , r  = -1
-  while (lo <= hi) {
-    var mid = (lo + hi) >> 1
-      , s   = compareCells(cells[mid], c)
-    if(s <= 0) {
-      if(s === 0) {
-        r = mid
-      }
-      lo = mid + 1
-    } else if(s > 0) {
-      hi = mid - 1
-    }
-  }
-  return r
-}
-exports.findCell = findCell;
-
-//Builds an index for an n-cell.  This is more general than dual, but less efficient
-function incidence(from_cells, to_cells) {
-  var index = new Array(from_cells.length)
-  for(var i=0, il=index.length; i<il; ++i) {
-    index[i] = []
-  }
-  var b = []
-  for(var i=0, n=to_cells.length; i<n; ++i) {
-    var c = to_cells[i]
-    var cl = c.length
-    for(var k=1, kn=(1<<cl); k<kn; ++k) {
-      b.length = bits.popCount(k)
-      var l = 0
-      for(var j=0; j<cl; ++j) {
-        if(k & (1<<j)) {
-          b[l++] = c[j]
-        }
-      }
-      var idx=findCell(from_cells, b)
-      if(idx < 0) {
-        continue
-      }
-      while(true) {
-        index[idx++].push(i)
-        if(idx >= from_cells.length || compareCells(from_cells[idx], b) !== 0) {
-          break
-        }
-      }
-    }
-  }
-  return index
-}
-exports.incidence = incidence
-
-//Computes the dual of the mesh.  This is basically an optimized version of buildIndex for the situation where from_cells is just the list of vertices
-function dual(cells, vertex_count) {
-  if(!vertex_count) {
-    return incidence(unique(skeleton(cells, 0)), cells, 0)
-  }
-  var res = new Array(vertex_count)
-  for(var i=0; i<vertex_count; ++i) {
-    res[i] = []
-  }
-  for(var i=0, len=cells.length; i<len; ++i) {
-    var c = cells[i]
-    for(var j=0, cl=c.length; j<cl; ++j) {
-      res[c[j]].push(i)
-    }
-  }
-  return res
-}
-exports.dual = dual
-
-//Enumerates all cells in the complex
-function explode(cells) {
-  var result = []
-  for(var i=0, il=cells.length; i<il; ++i) {
-    var c = cells[i]
-      , cl = c.length|0
-    for(var j=1, jl=(1<<cl); j<jl; ++j) {
-      var b = []
-      for(var k=0; k<cl; ++k) {
-        if((j >>> k) & 1) {
-          b.push(c[k])
-        }
-      }
-      result.push(b)
-    }
-  }
-  return normalize(result)
-}
-exports.explode = explode
-
-//Enumerates all of the n-cells of a cell complex
-function skeleton(cells, n) {
-  if(n < 0) {
-    return []
-  }
-  var result = []
-    , k0     = (1<<(n+1))-1
-  for(var i=0; i<cells.length; ++i) {
-    var c = cells[i]
-    for(var k=k0; k<(1<<c.length); k=bits.nextCombination(k)) {
-      var b = new Array(n+1)
-        , l = 0
-      for(var j=0; j<c.length; ++j) {
-        if(k & (1<<j)) {
-          b[l++] = c[j]
-        }
-      }
-      result.push(b)
-    }
-  }
-  return normalize(result)
-}
-exports.skeleton = skeleton;
-
-//Computes the boundary of all cells, does not remove duplicates
-function boundary(cells) {
-  var res = []
-  for(var i=0,il=cells.length; i<il; ++i) {
-    var c = cells[i]
-    for(var j=0,cl=c.length; j<cl; ++j) {
-      var b = new Array(c.length-1)
-      for(var k=0, l=0; k<cl; ++k) {
-        if(k !== j) {
-          b[l++] = c[k]
-        }
-      }
-      res.push(b)
-    }
-  }
-  return normalize(res)
-}
-exports.boundary = boundary;
-
-//Computes connected components for a dense cell complex
-function connectedComponents_dense(cells, vertex_count) {
-  var labels = new UnionFind(vertex_count)
-  for(var i=0; i<cells.length; ++i) {
-    var c = cells[i]
-    for(var j=0; j<c.length; ++j) {
-      for(var k=j+1; k<c.length; ++k) {
-        labels.link(c[j], c[k])
-      }
-    }
-  }
-  var components = []
-    , component_labels = labels.ranks
-  for(var i=0; i<component_labels.length; ++i) {
-    component_labels[i] = -1
-  }
-  for(var i=0; i<cells.length; ++i) {
-    var l = labels.find(cells[i][0])
-    if(component_labels[l] < 0) {
-      component_labels[l] = components.length
-      components.push([cells[i].slice(0)])
-    } else {
-      components[component_labels[l]].push(cells[i].slice(0))
-    }
-  }
-  return components
-}
-
-//Computes connected components for a sparse graph
-function connectedComponents_sparse(cells) {
-  var vertices  = unique(normalize(skeleton(cells, 0)))
-    , labels    = new UnionFind(vertices.length)
-  for(var i=0; i<cells.length; ++i) {
-    var c = cells[i]
-    for(var j=0; j<c.length; ++j) {
-      var vj = findCell(vertices, [c[j]])
-      for(var k=j+1; k<c.length; ++k) {
-        labels.link(vj, findCell(vertices, [c[k]]))
-      }
-    }
-  }
-  var components        = []
-    , component_labels  = labels.ranks
-  for(var i=0; i<component_labels.length; ++i) {
-    component_labels[i] = -1
-  }
-  for(var i=0; i<cells.length; ++i) {
-    var l = labels.find(findCell(vertices, [cells[i][0]]));
-    if(component_labels[l] < 0) {
-      component_labels[l] = components.length
-      components.push([cells[i].slice(0)])
-    } else {
-      components[component_labels[l]].push(cells[i].slice(0))
-    }
-  }
-  return components
-}
-
-//Computes connected components for a cell complex
-function connectedComponents(cells, vertex_count) {
-  if(vertex_count) {
-    return connectedComponents_dense(cells, vertex_count)
-  }
-  return connectedComponents_sparse(cells)
-}
-exports.connectedComponents = connectedComponents
-
-},{"union-find":130,"bit-twiddle":52}],139:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 "use strict"
 
 module.exports = function signum(x) {
@@ -26511,24 +26171,6 @@ module.exports = function signum(x) {
   return 0.0
 }
 },{}],140:[function(require,module,exports){
-"use strict"
-
-module.exports = fastTwoSum
-
-function fastTwoSum(a, b, result) {
-	var x = a + b
-	var bv = x - a
-	var av = x - bv
-	var br = b - bv
-	var ar = a - av
-	if(result) {
-		result[0] = ar + br
-		result[1] = x
-		return result
-	}
-	return [ar+br, x]
-}
-},{}],141:[function(require,module,exports){
 "use strict"
 
 module.exports = createRBTree
@@ -27525,7 +27167,369 @@ function defaultCompare(a, b) {
 function createRBTree(compare) {
   return new RedBlackTree(compare || defaultCompare, null)
 }
-},{}],127:[function(require,module,exports){
+},{}],141:[function(require,module,exports){
+"use strict"
+
+module.exports = fastTwoSum
+
+function fastTwoSum(a, b, result) {
+	var x = a + b
+	var bv = x - a
+	var av = x - bv
+	var br = b - bv
+	var ar = a - av
+	if(result) {
+		result[0] = ar + br
+		result[1] = x
+		return result
+	}
+	return [ar+br, x]
+}
+},{}],105:[function(require,module,exports){
+"use strict"; "use restrict";
+
+var bits      = require("bit-twiddle")
+  , UnionFind = require("union-find")
+
+//Returns the dimension of a cell complex
+function dimension(cells) {
+  var d = 0
+    , max = Math.max
+  for(var i=0, il=cells.length; i<il; ++i) {
+    d = max(d, cells[i].length)
+  }
+  return d-1
+}
+exports.dimension = dimension
+
+//Counts the number of vertices in faces
+function countVertices(cells) {
+  var vc = -1
+    , max = Math.max
+  for(var i=0, il=cells.length; i<il; ++i) {
+    var c = cells[i]
+    for(var j=0, jl=c.length; j<jl; ++j) {
+      vc = max(vc, c[j])
+    }
+  }
+  return vc+1
+}
+exports.countVertices = countVertices
+
+//Returns a deep copy of cells
+function cloneCells(cells) {
+  var ncells = new Array(cells.length)
+  for(var i=0, il=cells.length; i<il; ++i) {
+    ncells[i] = cells[i].slice(0)
+  }
+  return ncells
+}
+exports.cloneCells = cloneCells
+
+//Ranks a pair of cells up to permutation
+function compareCells(a, b) {
+  var n = a.length
+    , t = a.length - b.length
+    , min = Math.min
+  if(t) {
+    return t
+  }
+  switch(n) {
+    case 0:
+      return 0;
+    case 1:
+      return a[0] - b[0];
+    case 2:
+      var d = a[0]+a[1]-b[0]-b[1]
+      if(d) {
+        return d
+      }
+      return min(a[0],a[1]) - min(b[0],b[1])
+    case 3:
+      var l1 = a[0]+a[1]
+        , m1 = b[0]+b[1]
+      d = l1+a[2] - (m1+b[2])
+      if(d) {
+        return d
+      }
+      var l0 = min(a[0], a[1])
+        , m0 = min(b[0], b[1])
+        , d  = min(l0, a[2]) - min(m0, b[2])
+      if(d) {
+        return d
+      }
+      return min(l0+a[2], l1) - min(m0+b[2], m1)
+    
+    //TODO: Maybe optimize n=4 as well?
+    
+    default:
+      var as = a.slice(0)
+      as.sort()
+      var bs = b.slice(0)
+      bs.sort()
+      for(var i=0; i<n; ++i) {
+        t = as[i] - bs[i]
+        if(t) {
+          return t
+        }
+      }
+      return 0
+  }
+}
+exports.compareCells = compareCells
+
+function compareZipped(a, b) {
+  return compareCells(a[0], b[0])
+}
+
+//Puts a cell complex into normal order for the purposes of findCell queries
+function normalize(cells, attr) {
+  if(attr) {
+    var len = cells.length
+    var zipped = new Array(len)
+    for(var i=0; i<len; ++i) {
+      zipped[i] = [cells[i], attr[i]]
+    }
+    zipped.sort(compareZipped)
+    for(var i=0; i<len; ++i) {
+      cells[i] = zipped[i][0]
+      attr[i] = zipped[i][1]
+    }
+    return cells
+  } else {
+    cells.sort(compareCells)
+    return cells
+  }
+}
+exports.normalize = normalize
+
+//Removes all duplicate cells in the complex
+function unique(cells) {
+  if(cells.length === 0) {
+    return []
+  }
+  var ptr = 1
+    , len = cells.length
+  for(var i=1; i<len; ++i) {
+    var a = cells[i]
+    if(compareCells(a, cells[i-1])) {
+      if(i === ptr) {
+        ptr++
+        continue
+      }
+      cells[ptr++] = a
+    }
+  }
+  cells.length = ptr
+  return cells
+}
+exports.unique = unique;
+
+//Finds a cell in a normalized cell complex
+function findCell(cells, c) {
+  var lo = 0
+    , hi = cells.length-1
+    , r  = -1
+  while (lo <= hi) {
+    var mid = (lo + hi) >> 1
+      , s   = compareCells(cells[mid], c)
+    if(s <= 0) {
+      if(s === 0) {
+        r = mid
+      }
+      lo = mid + 1
+    } else if(s > 0) {
+      hi = mid - 1
+    }
+  }
+  return r
+}
+exports.findCell = findCell;
+
+//Builds an index for an n-cell.  This is more general than dual, but less efficient
+function incidence(from_cells, to_cells) {
+  var index = new Array(from_cells.length)
+  for(var i=0, il=index.length; i<il; ++i) {
+    index[i] = []
+  }
+  var b = []
+  for(var i=0, n=to_cells.length; i<n; ++i) {
+    var c = to_cells[i]
+    var cl = c.length
+    for(var k=1, kn=(1<<cl); k<kn; ++k) {
+      b.length = bits.popCount(k)
+      var l = 0
+      for(var j=0; j<cl; ++j) {
+        if(k & (1<<j)) {
+          b[l++] = c[j]
+        }
+      }
+      var idx=findCell(from_cells, b)
+      if(idx < 0) {
+        continue
+      }
+      while(true) {
+        index[idx++].push(i)
+        if(idx >= from_cells.length || compareCells(from_cells[idx], b) !== 0) {
+          break
+        }
+      }
+    }
+  }
+  return index
+}
+exports.incidence = incidence
+
+//Computes the dual of the mesh.  This is basically an optimized version of buildIndex for the situation where from_cells is just the list of vertices
+function dual(cells, vertex_count) {
+  if(!vertex_count) {
+    return incidence(unique(skeleton(cells, 0)), cells, 0)
+  }
+  var res = new Array(vertex_count)
+  for(var i=0; i<vertex_count; ++i) {
+    res[i] = []
+  }
+  for(var i=0, len=cells.length; i<len; ++i) {
+    var c = cells[i]
+    for(var j=0, cl=c.length; j<cl; ++j) {
+      res[c[j]].push(i)
+    }
+  }
+  return res
+}
+exports.dual = dual
+
+//Enumerates all cells in the complex
+function explode(cells) {
+  var result = []
+  for(var i=0, il=cells.length; i<il; ++i) {
+    var c = cells[i]
+      , cl = c.length|0
+    for(var j=1, jl=(1<<cl); j<jl; ++j) {
+      var b = []
+      for(var k=0; k<cl; ++k) {
+        if((j >>> k) & 1) {
+          b.push(c[k])
+        }
+      }
+      result.push(b)
+    }
+  }
+  return normalize(result)
+}
+exports.explode = explode
+
+//Enumerates all of the n-cells of a cell complex
+function skeleton(cells, n) {
+  if(n < 0) {
+    return []
+  }
+  var result = []
+    , k0     = (1<<(n+1))-1
+  for(var i=0; i<cells.length; ++i) {
+    var c = cells[i]
+    for(var k=k0; k<(1<<c.length); k=bits.nextCombination(k)) {
+      var b = new Array(n+1)
+        , l = 0
+      for(var j=0; j<c.length; ++j) {
+        if(k & (1<<j)) {
+          b[l++] = c[j]
+        }
+      }
+      result.push(b)
+    }
+  }
+  return normalize(result)
+}
+exports.skeleton = skeleton;
+
+//Computes the boundary of all cells, does not remove duplicates
+function boundary(cells) {
+  var res = []
+  for(var i=0,il=cells.length; i<il; ++i) {
+    var c = cells[i]
+    for(var j=0,cl=c.length; j<cl; ++j) {
+      var b = new Array(c.length-1)
+      for(var k=0, l=0; k<cl; ++k) {
+        if(k !== j) {
+          b[l++] = c[k]
+        }
+      }
+      res.push(b)
+    }
+  }
+  return normalize(res)
+}
+exports.boundary = boundary;
+
+//Computes connected components for a dense cell complex
+function connectedComponents_dense(cells, vertex_count) {
+  var labels = new UnionFind(vertex_count)
+  for(var i=0; i<cells.length; ++i) {
+    var c = cells[i]
+    for(var j=0; j<c.length; ++j) {
+      for(var k=j+1; k<c.length; ++k) {
+        labels.link(c[j], c[k])
+      }
+    }
+  }
+  var components = []
+    , component_labels = labels.ranks
+  for(var i=0; i<component_labels.length; ++i) {
+    component_labels[i] = -1
+  }
+  for(var i=0; i<cells.length; ++i) {
+    var l = labels.find(cells[i][0])
+    if(component_labels[l] < 0) {
+      component_labels[l] = components.length
+      components.push([cells[i].slice(0)])
+    } else {
+      components[component_labels[l]].push(cells[i].slice(0))
+    }
+  }
+  return components
+}
+
+//Computes connected components for a sparse graph
+function connectedComponents_sparse(cells) {
+  var vertices  = unique(normalize(skeleton(cells, 0)))
+    , labels    = new UnionFind(vertices.length)
+  for(var i=0; i<cells.length; ++i) {
+    var c = cells[i]
+    for(var j=0; j<c.length; ++j) {
+      var vj = findCell(vertices, [c[j]])
+      for(var k=j+1; k<c.length; ++k) {
+        labels.link(vj, findCell(vertices, [c[k]]))
+      }
+    }
+  }
+  var components        = []
+    , component_labels  = labels.ranks
+  for(var i=0; i<component_labels.length; ++i) {
+    component_labels[i] = -1
+  }
+  for(var i=0; i<cells.length; ++i) {
+    var l = labels.find(findCell(vertices, [cells[i][0]]));
+    if(component_labels[l] < 0) {
+      component_labels[l] = components.length
+      components.push([cells[i].slice(0)])
+    } else {
+      components[component_labels[l]].push(cells[i].slice(0))
+    }
+  }
+  return components
+}
+
+//Computes connected components for a cell complex
+function connectedComponents(cells, vertex_count) {
+  if(vertex_count) {
+    return connectedComponents_dense(cells, vertex_count)
+  }
+  return connectedComponents_sparse(cells)
+}
+exports.connectedComponents = connectedComponents
+
+},{"union-find":130,"bit-twiddle":52}],128:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -27576,7 +27580,7 @@ function scaleLinearExpansion(e, scale) {
   g.length = count
   return g
 }
-},{"two-sum":138,"two-product":125}],142:[function(require,module,exports){
+},{"two-sum":141,"two-product":126}],142:[function(require,module,exports){
 "use strict"
 
 module.exports = robustSubtract
@@ -27733,7 +27737,7 @@ function robustSubtract(e, f) {
   g.length = count
   return g
 }
-},{}],129:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 "use strict"
 
 module.exports = compareAngle
@@ -27819,7 +27823,7 @@ function compareAngle(a, b, c, d) {
     }
   }
 }
-},{"signum":139,"robust-product":143,"two-sum":140,"robust-orientation":132,"robust-sum":110}],132:[function(require,module,exports){
+},{"two-sum":138,"signum":139,"robust-product":143,"robust-orientation":132,"robust-sum":110}],132:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -28606,7 +28610,7 @@ function createSlabDecomposition(segments) {
   }
   return new SlabDecomposition(slabs, lines, horizontal)
 }
-},{"./lib/order-segments":147,"functional-red-black-tree":141,"robust-orientation":132,"binary-search-bounds":45}],147:[function(require,module,exports){
+},{"./lib/order-segments":147,"functional-red-black-tree":140,"robust-orientation":132,"binary-search-bounds":45}],147:[function(require,module,exports){
 "use strict"
 
 module.exports = orderSegments
@@ -28834,6 +28838,6 @@ function scaleLinearExpansion(e, scale) {
   g.length = count
   return g
 }
-},{"two-sum":140,"two-product":109}]},{},[1])
+},{"two-sum":138,"two-product":109}]},{},[1])
 ;</script>
 </html>
