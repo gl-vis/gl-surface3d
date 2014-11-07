@@ -24,12 +24,16 @@ void main() {
   vec3 V = normalize(eyeDirection);
   vec3 L = normalize(lightDirection);
 
+  if(gl_FrontFacing) {
+    N = -N;
+  }
+
   float specular = cookTorrance(L, V, N, roughness, fresnel);
   float diffuse  = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);
 
   float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);
   vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));
-  vec4 litColor = vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1,1,1) * specular,  surfaceColor.a);
+  vec4 litColor = surfaceColor.a * vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1,1,1) * specular,  1.0);
   
   gl_FragColor = mix(litColor, contourColor, contourTint);
 }

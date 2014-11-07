@@ -9,7 +9,7 @@
   "dependencies": {
     "binary-search-bounds": "^1.0.0",
     "bit-twiddle": "^1.0.2",
-    "colormap": "^1.1.1",
+    "colormap": "^2.0.0",
     "dup": "^1.0.0",
     "gl-axes": "^5.0.3",
     "gl-buffer": "^2.0.3",

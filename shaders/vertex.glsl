@@ -24,7 +24,4 @@ void main() {
   lightDirection = lightPosition - worldCoordinate;
   eyeDirection   = eyePosition - worldCoordinate;
   surfaceNormal  = normal;
-  if(dot(eyeDirection, normal) < 0.0) {
-    surfaceNormal = -normal;
-  }
 }

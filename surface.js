@@ -82,9 +82,9 @@ function genColormap(name) {
   var x = pack([colormap({
     colormap: name,
     nshades: 256,
-    format: 'rgb'
+    format: 'rgba'
   }).map(function(c) {
-    return [c[0], c[1], c[2], 255]
+    return [c[0], c[1], c[2], 255*c[3]]
   })])
   ops.divseq(x, 255.0)
   return x
