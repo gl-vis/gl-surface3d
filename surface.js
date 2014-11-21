@@ -138,7 +138,7 @@ function SurfacePlot(
   this._dynamicCounts     = [0,0,0]
 
   this.contourWidth       = [ 1, 1, 1 ]
-  this.contourLevels      = [[], [], []]
+  this.contourLevels      = [[1], [1], [1]]
   this.contourTint        = [0, 0, 0]
   this.contourColor       = [[0.5,0.5,0.5,1], [0.5,0.5,0.5,1], [0.5,0.5,0.5,1]]
 
@@ -820,20 +820,38 @@ proto.update = function(params) {
   }
 
   //Update level crossings
+  var levelsChanged = false
   if('levels' in params) {
     var levels = params.levels
     if(!Array.isArray(levels[0])) {
-      this.contourLevels = [ [], [], levels ]
+
+      levels = [ [], [], levels ]
     } else {
-      this.contourLevels = levels.slice()
+      levels = levels.slice()
     }
     for(var i=0; i<3; ++i) {
-      this.contourLevels[i] = this.contourLevels[i].slice()
-      this.contourLevels.sort(function(a,b) {
+      levels[i] = levels[i].slice()
+      levels.sort(function(a,b) {
         return a-b
       })
     }
+change_test:
+    for(var i=0; i<3; ++i) {
+      if(levels[i].length !== this.contourLevels[i].length) {
+        levelsChanged = true
+        break
+      }
+      for(var j=0; j<levels[i].length; ++j) {
+        if(levels[i][j] !== this.contourLevels[i][j]) {
+          levelsChanged = true
+          break change_test
+        }
+      }
+    }
+    this.contourLevels = levels
+  }
 
+  if(levelsChanged) {
     var fields = this._field
     var shape  = this.shape
 
