@@ -67,7 +67,7 @@ shell.on("gl-init", function() {
     lineWidth: 3,
     contourTint: 1,
     coords: coords,
-    contourProject: [true, true, true]
+    contourProject: [[true,false,false], [true,false,false], [true,false,false]]
     //surfaceProject: [true, true, true]
     //showContour: false
     //showSurface: false

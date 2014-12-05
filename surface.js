@@ -157,7 +157,9 @@ function SurfacePlot(
 
   this.axesBounds         = [[Infinity,Infinity,Infinity],[-Infinity,-Infinity,-Infinity]]
   this.surfaceProject     = [ false, false, false ]
-  this.contourProject     = [ false, false, false ]
+  this.contourProject     = [[ false, false, false ],
+                             [ false, false, false ],
+                             [ false, false, false ]]
 
   //Store xyz fields, need this for picking
   this._field             = [ 
@@ -191,24 +193,27 @@ function computeProjectionData(camera, obj) {
   var showContour = obj.showContour
   var projections = [null,null,null]
   var clipRects   = [null,null,null]
+
   for(var i=0; i<3; ++i) {
     showSurface = showSurface || obj.surfaceProject[i]
-    showContour = showContour || obj.contourProject[i]
-
-    if(obj.surfaceProject[i] || obj.contourProject[i]) {
-      //Construct projection onto axis
-      var axisSquish = IDENTITY.slice()
-
-      axisSquish[5*i] = 0
-      axisSquish[12+i] = obj.axesBounds[+(cubeAxis[i]>0)][i]
-      multiply(axisSquish, camera.model, axisSquish)
-      projections[i] = axisSquish
-
-      var nclipBounds = [camera.clipBounds[0].slice(), camera.clipBounds[1].slice()]
-      nclipBounds[0][i] = -1e8
-      nclipBounds[1][i] = 1e8
-      clipRects[i] = nclipBounds
+    for(var j=0; j<3; ++j) {
+      showContour = showContour || obj.contourProject[i][j]
     }
+  }
+
+  for(var i=0; i<3; ++i) {
+    //Construct projection onto axis
+    var axisSquish = IDENTITY.slice()
+
+    axisSquish[5*i] = 0
+    axisSquish[12+i] = obj.axesBounds[+(cubeAxis[i]>0)][i]
+    multiply(axisSquish, camera.model, axisSquish)
+    projections[i] = axisSquish
+
+    var nclipBounds = [camera.clipBounds[0].slice(), camera.clipBounds[1].slice()]
+    nclipBounds[0][i] = -1e8
+    nclipBounds[1][i] = 1e8
+    clipRects[i] = nclipBounds
   }
 
   return {
@@ -331,12 +336,12 @@ proto.draw = function(params) {
 
     //Draw projections of surface
     for(var i=0; i<3; ++i) {
-      if(!this.contourProject[i]) {
-        continue
-      }
       shader.uniforms.model      = projectData.projections[i]
       shader.uniforms.clipBounds = projectData.clipBounds[i]
       for(var j=0; j<3; ++j) {
+        if(!this.contourProject[i][j]) {
+          continue
+        }
         shader.uniforms.permutation = PERMUTATIONS[j]
         gl.lineWidth(this.contourWidth[j])
         for(var k=0; k<this.contourLevels[j].length; ++k) {
@@ -374,7 +379,7 @@ proto.draw = function(params) {
       vao.draw(gl.LINES, this._dynamicCounts[i], this._dynamicOffsets[i])
 
       for(var j=0; j<3; ++j) {
-        if(!this.contourProject[j]) {
+        if(!this.contourProject[j][i]) {
           continue
         }
 
@@ -452,13 +457,14 @@ proto.drawPick = function(params) {
 
     //Draw projections of surface
     for(var i=0; i<3; ++i) {
-      if(!this.contourProject[i]) {
-        continue
-      }
       shader.uniforms.model      = projectData.projections[i]
       shader.uniforms.clipBounds = projectData.clipBounds[i]
       
       for(var j=0; j<3; ++j) {
+        if(!this.contourProject[i][j]) {
+          continue
+        }
+        
         shader.uniforms.permutation = PERMUTATIONS[j]
         gl.lineWidth(this.contourWidth[j])
         for(var k=0; k<this.contourLevels[j].length; ++k) {
@@ -617,7 +623,9 @@ proto.update = function(params) {
     this.contourColor = handleColor(params.contourColor)
   }
   if('contourProject' in params) {
-    this.contourProject = handleArray(params.contourProject, Boolean)
+    this.contourProject = handleArray(params.contourProject, function(x) {
+      return handleArray(x, Boolean)
+    })
   }
   if('surfaceProject' in params) {
     this.surfaceProject = params.surfaceProject
