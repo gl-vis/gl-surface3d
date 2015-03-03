@@ -6,8 +6,7 @@ uniform mat3 permutation;
 uniform mat4 model, view, projection;
 uniform float height, zOffset;
 
-varying float value;
-varying float kill;
+varying float value, kill;
 varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
 varying vec3 lightDirection, eyeDirection, surfaceNormal;

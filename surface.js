@@ -4,7 +4,6 @@ module.exports = createSurfacePlot
 
 var dup           = require('dup')
 var bits          = require('bit-twiddle')
-var glslify       = require('glslify')
 var createBuffer  = require('gl-buffer')
 var createVAO     = require('gl-vao')
 var createTexture = require('gl-texture2d')
@@ -19,25 +18,14 @@ var multiply      = require('gl-mat4/multiply')
 var invert        = require('gl-mat4/invert')
 var bsearch       = require('binary-search-bounds')
 var gradient      = require('ndarray-gradient')
+var shaders       = require('./lib/shaders')
+
+var createShader            = shaders.createShader
+var createContourShader     = shaders.createContourShader
+var createPickShader        = shaders.createPickShader
+var createPickContourShader = shaders.createPickContourShader
 
 var SURFACE_VERTEX_SIZE = 4 * (4 + 2 + 3)
-
-var createShader = glslify({
-    vertex:   './shaders/vertex.glsl',
-    fragment: './shaders/fragment.glsl'
-  }),
-  createContourShader = glslify({
-    vertex:   './shaders/contour-vertex.glsl',
-    fragment: './shaders/fragment.glsl'
-  }),
-  createPickShader = glslify({
-    vertex:   './shaders/vertex.glsl',
-    fragment: './shaders/pick.glsl'
-  }),
-  createPickContourShader = glslify({
-    vertex:   './shaders/contour-vertex.glsl',
-    fragment: './shaders/pick.glsl'
-  })
 
 var IDENTITY = [
   1, 0, 0, 0,
@@ -145,11 +133,13 @@ function SurfacePlot(
   this.showContour        = true
   this.showSurface        = true
 
+  this.enableHighlight    = [true, true, true]
   this.highlightColor     = [[0,0,0,1], [0,0,0,1], [0,0,0,1]]
   this.highlightTint      = [ 1, 1, 1 ]
   this.highlightLevel     = [-1, -1, -1]
 
   //Dynamic contour options
+  this.enableDynamic      = [ true, true, true ]
   this.dynamicLevel       = [ NaN, NaN, NaN ]
   this.dynamicColor       = [ [0, 0, 0, 1], [0, 0, 0, 1], [0, 0, 0, 1] ]
   this.dynamicTint        = [ 1, 1, 1 ]
@@ -170,6 +160,10 @@ function SurfacePlot(
   this.pickId             = 1
   this.clipBounds         = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
   
+  this.snapToData         = false
+
+  this.opacity            = 1.0
+
   this.lightPosition      = [10, 10000, 0]
   this.ambientLight       = 0.8
   this.diffuseLight       = 0.8
@@ -179,6 +173,28 @@ function SurfacePlot(
 }
 
 var proto = SurfacePlot.prototype
+
+proto.isTransparent = function() {
+  return this.opacity < 1
+}
+
+proto.isOpaque = function() {
+  if(this.opacity >= 1) {
+    return true
+  }
+  for(var i=0; i<3; ++i) {
+    if(this._contourCounts[i].length > 0 || this._dynamicCounts[i] > 0) {
+      return true
+    }
+  }
+  return false
+}
+
+proto.pickSlots = 1
+
+proto.setPickBase = function(id) {
+  this.pickId = id
+}
 
 function computeProjectionData(camera, obj) {
   //Compute cube properties
@@ -224,10 +240,13 @@ function computeProjectionData(camera, obj) {
   }
 }
 
-proto.draw = function(params) {
+
+function drawCore(params, transparent) {
   params = params || {}
   var gl = this.gl
-  
+
+  gl.disable(gl.CULL_FACE)
+
   var uniforms = {
     model:      params.model || IDENTITY,
     view:       params.view || IDENTITY,
@@ -247,15 +266,15 @@ proto.draw = function(params) {
     lightPosition: [1000,1000,1000],
     eyePosition: [0,0,0],
     roughness:    this.roughness,
-    fresnel:      this.fresnel
+    fresnel:      this.fresnel,
+    opacity:      this.opacity
   }
 
   //Compute camera matrix inverse
   var invCameraMatrix = IDENTITY.slice()
   multiply(invCameraMatrix, uniforms.view, uniforms.model)
-  multiply(invCameraMatrix, uniforms.projection, uniforms.view)
+  multiply(invCameraMatrix, uniforms.projection, invCameraMatrix)
   invert(invCameraMatrix, invCameraMatrix)
-
 
   for(var i=0; i<3; ++i) {
     uniforms.eyePosition[i] = invCameraMatrix[12+i] / invCameraMatrix[15]
@@ -275,7 +294,7 @@ proto.draw = function(params) {
 
   var projectData = computeProjectionData(uniforms, this)
 
-  if(projectData.showSurface) {
+  if(projectData.showSurface && (transparent === (this.opacity < 1))) {
     //Set up uniforms
     this._shader.bind()
     this._shader.uniforms = uniforms
@@ -300,13 +319,14 @@ proto.draw = function(params) {
     this._vao.unbind()
   }
 
-  if(projectData.showContour) {
+  if(projectData.showContour && !transparent) {
     var shader = this._contourShader
 
     //Don't apply lighting to contours
     uniforms.kambient = 1.0
     uniforms.kdiffuse = 0.0
     uniforms.kspecular = 0.0
+    uniforms.opacity = 1.0
 
     shader.bind()
     shader.uniforms = uniforms
@@ -393,9 +413,20 @@ proto.draw = function(params) {
   }
 }
 
+
+
+proto.draw = function(params) {
+  return drawCore.call(this, params, false)
+}
+
+proto.drawTransparent = function(params) {
+  return drawCore.call(this, params, true)
+}
+
 proto.drawPick = function(params) {
   params = params || {}
   var gl = this.gl
+  gl.disable(gl.CULL_FACE)
   
   var uniforms = {
     model:        params.model || IDENTITY,
@@ -477,6 +508,7 @@ proto.drawPick = function(params) {
     vao.unbind()
   }
 }
+
 
 proto.pick = function(selection) {
   if(!selection) {
@@ -969,18 +1001,47 @@ proto.dispose = function() {
   }
 }
 
-proto.dynamic = function(levels) {
-  if(!levels) {
+proto.highlight = function(selection) {
+  if(!selection) {
     this._dynamicCounts = [0,0,0]
+    this.dyanamicLevel = [NaN, NaN, NaN]
+    this.highlightLevel = [-1,-1,-1]
+    return
+  }
+
+  for(var i=0; i<3; ++i) {
+    if(this.enableHighlight[i]) {
+      this.highlightLevel[i] = selection.level[i]
+    } else {
+      this.highlightLevel[i] = -1
+    }
+  }
+
+  var levels
+  if(this.snapToData) {
+    levels = selection.dataCoordinate
+  } else {
+    levels = selection.position
+  }
+  if( (!this.enableDynamic[0] || levels[0] === this.dynamicLevel[0]) &&
+      (!this.enableDynamic[1] || levels[1] === this.dynamicLevel[1]) &&
+      (!this.enableDynamic[2] || levels[2] === this.dynamicLevel[2]) ) {
     return
   }
 
   var vertexCount = 0
   var shape = this.shape
   var scratchBuffer = pool.mallocFloat(12 * shape[0] * shape[1]) 
-  this.dynamicLevel = levels.slice()
-
+  
   for(var d=0; d<3; ++d) {
+    if(!this.enableDynamic[d]) {
+      this.dynamicLevel[d] = NaN
+      this._dynamicCounts[d] = 0
+      continue
+    }
+
+    this.dynamicLevel[d] = levels[d]
+
     var u = (d+1) % 3
     var v = (d+2) % 3
 
@@ -1049,19 +1110,10 @@ proto.dynamic = function(levels) {
 
 function createSurfacePlot(gl, field, params) {
   var shader = createShader(gl)
-  shader.attributes.uv.location = 0
-  shader.attributes.f.location = 1
-
   var pickShader = createPickShader(gl)
-  pickShader.attributes.uv.location = 0
-  pickShader.attributes.f.location = 1
-
   var contourShader = createContourShader(gl)
-  contourShader.attributes.uv.location = 0
-
   var contourPickShader = createPickContourShader(gl)
-  contourPickShader.attributes.uv.location = 0
-
+  
   var coordinateBuffer = createBuffer(gl)
   var vao = createVAO(gl, [
       { buffer: coordinateBuffer,

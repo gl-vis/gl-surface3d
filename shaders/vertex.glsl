@@ -14,7 +14,8 @@ varying vec3 lightDirection, eyeDirection, surfaceNormal;
 
 void main() {
   vec4 worldPosition = model * vec4(uv.zw, f.x, 1.0);
-  gl_Position = projection * view * worldPosition;
+  vec4 clipPosition = projection * view * worldPosition;
+  gl_Position = clipPosition;
   value = f.x;
   kill = f.y;
   worldCoordinate = vec3(uv.zw, f.x);

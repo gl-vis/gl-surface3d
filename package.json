@@ -14,6 +14,7 @@
     "gl-axes": "^5.0.3",
     "gl-buffer": "^2.0.3",
     "gl-mat4": "^1.0.0",
+    "gl-shader": "^4.0.0",
     "gl-texture2d": "^2.0.0",
     "gl-vao": "^1.1.1",
     "glsl-specular-cook-torrance": "^2.0.0",
