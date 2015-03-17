@@ -47,7 +47,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/mikolalysenko/gl-surface-plot.git"
+    "url": "git://github.com/gl-vis/gl-surface-plot.git"
   },
   "keywords": [
     "plot",
@@ -61,7 +61,7 @@
   "author": "Mikola Lysenko",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mikolalysenko/gl-surface-plot/issues"
+    "url": "https://github.com/gl-vis/gl-surface-plot/issues"
   },
-  "homepage": "https://github.com/mikolalysenko/gl-surface-plot"
+  "homepage": "https://github.com/gl-vis/gl-surface-plot"
 }
