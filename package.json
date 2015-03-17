@@ -19,7 +19,7 @@
     "gl-vao": "^1.1.1",
     "glsl-specular-cook-torrance": "^2.0.0",
     "glslify": "^1.0.0",
-    "ndarray": "^1.0.15",
+    "ndarray": "^1.0.16",
     "ndarray-gradient": "^1.0.0",
     "ndarray-ops": "^1.2.1",
     "ndarray-pack": "^1.0.1",

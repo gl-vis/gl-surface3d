@@ -2,7 +2,6 @@
 
 module.exports = createSurfacePlot
 
-var dup           = require('dup')
 var bits          = require('bit-twiddle')
 var createBuffer  = require('gl-buffer')
 var createVAO     = require('gl-vao')
@@ -119,6 +118,8 @@ function SurfacePlot(
   this._contourOffsets    = [[], [], []]
   this._contourCounts     = [[], [], []]
   this._vertexCount       = 0
+  
+  this._pickResult        = new SurfacePickResult([0,0,0], [0,0], [0,0], [0,0,0])
 
   this._dynamicBuffer     = dynamicBuffer
   this._dynamicVAO        = dynamicVAO
@@ -196,20 +197,25 @@ proto.setPickBase = function(id) {
   this.pickId = id
 }
 
+var ZERO_VEC = [0,0,0]
+
+var PROJECT_DATA = {
+  showSurface: false,
+  showContour: false,
+  projections: [IDENTITY.slice(), IDENTITY.slice(), IDENTITY.slice()],
+  clipBounds:   [
+    [[0,0,0], [0,0,0]], 
+    [[0,0,0], [0,0,0]],
+    [[0,0,0], [0,0,0]]]
+}
+
 function computeProjectionData(camera, obj) {
   //Compute cube properties
-  var cubeProps = getCubeProps(
-      camera.model, 
-      camera.view, 
-      camera.projection, 
-      obj.axesBounds)
-  var cubeAxis  = cubeProps.axis
+  var cubeAxis  = (obj.axes && obj.axes.lastCubeProps.axis) || ZERO_VEC
 
   var showSurface = obj.showSurface
   var showContour = obj.showContour
-  var projections = [null,null,null]
-  var clipRects   = [null,null,null]
-
+  
   for(var i=0; i<3; ++i) {
     showSurface = showSurface || obj.surfaceProject[i]
     for(var j=0; j<3; ++j) {
@@ -219,27 +225,58 @@ function computeProjectionData(camera, obj) {
 
   for(var i=0; i<3; ++i) {
     //Construct projection onto axis
-    var axisSquish = IDENTITY.slice()
-
+    var axisSquish = PROJECT_DATA.projections[i]
+    for(var j=0; j<16; ++j) {
+      axisSquish[j] = 0
+    }
+    for(var j=0; j<4; ++j) {
+      axisSquish[5*j] = 1
+    }
     axisSquish[5*i] = 0
     axisSquish[12+i] = obj.axesBounds[+(cubeAxis[i]>0)][i]
     multiply(axisSquish, camera.model, axisSquish)
-    projections[i] = axisSquish
-
-    var nclipBounds = [camera.clipBounds[0].slice(), camera.clipBounds[1].slice()]
+    
+    var nclipBounds = PROJECT_DATA.clipBounds[i]
+    for(var k=0; k<2; ++k) {
+      for(var j=0; j<3; ++j) {
+        nclipBounds[k][j] = camera.clipBounds[k][j]
+      }
+    }
     nclipBounds[0][i] = -1e8
     nclipBounds[1][i] = 1e8
-    clipRects[i] = nclipBounds
   }
 
-  return {
-    showSurface: showSurface,
-    showContour: showContour,
-    projections: projections,
-    clipBounds: clipRects
-  }
+  PROJECT_DATA.showSurface = showSurface
+  PROJECT_DATA.showContour = showContour
+
+  return PROJECT_DATA
 }
 
+var UNIFORMS = {
+  model:      IDENTITY,
+  view:       IDENTITY,
+  projection: IDENTITY,
+  lowerBound: [0,0,0],
+  upperBound: [0,0,0],
+  colorMap:   0,
+  clipBounds: [[0,0,0], [0,0,0]],
+  height:     0.0,
+  contourTint: 0,
+  contourColor: [0,0,0,1],
+  permutation: [1,0,0,0,1,0,0,0,1],
+  zOffset: -1e-3,
+  kambient: 1,
+  kdiffuse: 1,
+  kspecular: 1,
+  lightPosition: [1000,1000,1000],
+  eyePosition: [0,0,0],
+  roughness: 1,
+  fresnel: 1,
+  opacity: 1
+}
+
+var MATRIX_INVERSE = IDENTITY.slice()
+var DEFAULT_PERM = [1,0,0,0,1,0,0,0,1]
 
 function drawCore(params, transparent) {
   params = params || {}
@@ -247,31 +284,38 @@ function drawCore(params, transparent) {
 
   gl.disable(gl.CULL_FACE)
 
-  var uniforms = {
-    model:      params.model || IDENTITY,
-    view:       params.view || IDENTITY,
-    projection: params.projection || IDENTITY,
-    lowerBound: this.bounds[0],
-    upperBound: this.bounds[1],
-    colormap:   this._colorMap.bind(0),
-    clipBounds: this.clipBounds.map(clampVec),
-    height:     0.0,
-    contourTint:  0,
-    contourColor: this.contourColor[0],
-    permutation: [1,0,0,0,1,0,0,0,1],
-    zOffset:     -1e-3,
-    kambient:   this.ambientLight,
-    kdiffuse:   this.diffuseLight,
-    kspecular:  this.specularLight,
-    lightPosition: [1000,1000,1000],
-    eyePosition: [0,0,0],
-    roughness:    this.roughness,
-    fresnel:      this.fresnel,
-    opacity:      this.opacity
+  this._colorMap.bind(0)
+
+  var uniforms = UNIFORMS
+  uniforms.model        = params.model || IDENTITY
+  uniforms.view         = params.view || IDENTITY
+  uniforms.projection   = params.projection || IDENTITY
+  uniforms.lowerBound   = this.bounds[0]
+  uniforms.upperBound   = this.bounds[1]
+  uniforms.contourColor = this.contourColor[0]
+
+  for(var i=0; i<2; ++i) {
+    var clipClamped = uniforms.clipBounds[i]
+    for(var j=0; j<3; ++j) {
+      clipClamped[j] = Math.min(Math.max(this.clipBounds[i][j], -1e8), 1e8)
+    }
   }
 
+  uniforms.kambient   = this.ambientLight
+  uniforms.kdiffuse   = this.diffuseLight
+  uniforms.kspecular  = this.specularLight
+
+  uniforms.shape = 
+
+  uniforms.roughness  = this.roughness
+  uniforms.fresnel    = this.fresnel
+  uniforms.opacity    = this.opacity
+
+  uniforms.height = 0.0
+  uniforms.permutation = DEFAULT_PERM
+
   //Compute camera matrix inverse
-  var invCameraMatrix = IDENTITY.slice()
+  var invCameraMatrix = MATRIX_INVERSE
   multiply(invCameraMatrix, uniforms.view, uniforms.model)
   multiply(invCameraMatrix, uniforms.projection, invCameraMatrix)
   invert(invCameraMatrix, invCameraMatrix)
@@ -413,8 +457,6 @@ function drawCore(params, transparent) {
   }
 }
 
-
-
 proto.draw = function(params) {
   return drawCore.call(this, params, false)
 }
@@ -423,25 +465,42 @@ proto.drawTransparent = function(params) {
   return drawCore.call(this, params, true)
 }
 
+var PICK_UNIFORMS = {
+  model:          IDENTITY,
+  view:           IDENTITY,
+  projection:     IDENTITY,
+  clipBounds:     [[0,0,0],[0,0,0]],
+  height:         0.0,
+  shape:          [0,0],
+  pickId:         0,
+  lowerBound:     [0,0,0],
+  upperBound:     [0,0,0],
+  zOffset:        0.0,
+  permutation:    [1,0,0,0,1,0,0,0,1],
+  lightPosition:  [0,0,0],
+  eyePosition:    [0,0,0]
+}
+
 proto.drawPick = function(params) {
   params = params || {}
   var gl = this.gl
   gl.disable(gl.CULL_FACE)
   
-  var uniforms = {
-    model:        params.model || IDENTITY,
-    view:         params.view || IDENTITY,
-    projection:   params.projection || IDENTITY,
-    clipBounds:   this.clipBounds.map(clampVec),
-    height:       0.0,
-    shape:        this._field[2].shape.slice(),
-    pickId:       this.pickId/255.0,
-    lowerBound:   this.bounds[0],
-    upperBound:   this.bounds[1],
-    zOffset:      0.0,
-    permutation: [1,0,0,0,1,0,0,0,1],
-    lightPosition: [0,0,0],
-    eyePosition: [0,0,0]
+  var uniforms = PICK_UNIFORMS
+  uniforms.model = params.model || IDENTITY
+  uniforms.view = params.view || IDENTITY
+  uniforms.projection = params.projection || IDENTITY
+  uniforms.shape = this._field[2].shape
+  uniforms.pickId = this.pickId / 255.0
+  uniforms.lowerBound = this.bounds[0]
+  uniforms.upperBound = this.bounds[1]
+  uniforms.permutation = DEFAULT_PERM
+
+  for(var i=0; i<2; ++i) {
+    var clipClamped = uniforms.clipBounds[i]
+    for(var j=0; j<3; ++j) {
+      clipClamped[j] = Math.min(Math.max(this.clipBounds[i][j], -1e8), 1e8)
+    }
   }
 
   var projectData = computeProjectionData(uniforms, this)
@@ -519,7 +578,9 @@ proto.pick = function(selection) {
     return null
   }
 
-  var shape = this._field[2].shape.slice()
+  var shape = this._field[2].shape
+
+  var result = this._pickResult
 
   //Compute uv coordinate
   var x = shape[0] * (selection.value[0] + (selection.value[2]>>4)/16.0)/255.0
@@ -534,7 +595,8 @@ proto.pick = function(selection) {
   iy += 1
 
   //Compute xyz coordinate
-  var pos = [0,0,0]
+  var pos = result.position
+  pos[0] = pos[1] = pos[2] = 0
   for(var dx=0; dx<2; ++dx) {
     var s = dx ? fx : 1.0 - fx
     for(var dy=0; dy<2; ++dy) {
@@ -551,7 +613,7 @@ proto.pick = function(selection) {
   }
 
   //Find closest level
-  var levelIndex = [-1,-1,-1]
+  var levelIndex = this._pickResult.level
   for(var j=0; j<3; ++j) {
     levelIndex[j] = bsearch.le(this.contourLevels[j], pos[j])
     if(levelIndex[j] < 0) {
@@ -567,13 +629,13 @@ proto.pick = function(selection) {
     }
   }
 
-  //Retrun resulting pick point
-  return new SurfacePickResult(
-    pos,
-    [ fx<0.5 ? ix : (ix+1),
-      fy<0.5 ? iy : (iy+1) ],
-    [ x/shape[0], y/shape[1] ],
-    levelIndex)
+  result.index[0] = fx<0.5 ? ix : (ix+1)
+  result.index[1] = fy<0.5 ? iy : (iy+1)
+
+  result.uv[0] = x/shape[0]
+  result.uv[1] = y/shape[1]
+
+  return result
 }
 
 function padField(nfield, field) {
@@ -1108,7 +1170,11 @@ proto.highlight = function(selection) {
   pool.freeFloat(scratchBuffer)
 }
 
-function createSurfacePlot(gl, field, params) {
+function createSurfacePlot(params) {
+
+  var gl = params.gl
+  var field = params.field || (params.coords && params.coords[2])
+
   var shader = createShader(gl)
   var pickShader = createPickShader(gl)
   var contourShader = createContourShader(gl)
