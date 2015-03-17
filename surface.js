@@ -737,6 +737,8 @@ proto.update = function(params) {
     this.dynamicWidth = handleArray(params.dynamicWidth, Number)
   }
 
+  var field = params.field || (params.coords && params.coords[2])
+
   //Update field
   if('field' in params) {
     var field = params.field
@@ -768,7 +770,7 @@ proto.update = function(params) {
     //Generate x/y coordinates
     if(params.coords) {
       var coords = params.coords
-      if(!Array.isArray(coords) || coords.length !== 2) {
+      if(!Array.isArray(coords) || coords.length !== 3) {
         throw new Error('gl-surface: invalid coordinates for x/y')
       }
       for(var i=0; i<2; ++i) {
