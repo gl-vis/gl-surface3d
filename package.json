@@ -1,6 +1,6 @@
 {
   "name": "gl-surface-plot",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "description": "Renders 2D surfaces",
   "main": "surface.js",
   "directories": {
