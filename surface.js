@@ -264,7 +264,7 @@ var UNIFORMS = {
   contourTint: 0,
   contourColor: [0,0,0,1],
   permutation: [1,0,0,0,1,0,0,0,1],
-  zOffset: -1e-3,
+  zOffset: -1e-4,
   kambient: 1,
   kdiffuse: 1,
   kspecular: 1,

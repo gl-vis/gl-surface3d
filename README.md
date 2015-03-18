@@ -1,15 +1,15 @@
-gl-surface-plot
+gl-surface3d
 ===============
-A surface plot module
+3D parametric surface plotting, compatible with [gl-vis](http://github.com/gl-vis).
 
 # Example
 
 ```javascript
-var createScene = require('gl-plot3d')
-var createSurfacePlot = require("gl-surface-plot")
-var ndarray = require("ndarray")
-var fill = require("ndarray-fill")
-var diric = require("dirichlet")
+var createScene       = require('gl-plot3d')
+var createSurfacePlot = require('gl-surface3d')
+var ndarray           = require('ndarray')
+var fill              = require('ndarray-fill')
+var diric             = require('dirichlet')
 
 var scene = createScene()
 
@@ -32,19 +32,19 @@ Here is what this should look like:
 
 <img src="plot.png">
 
-[Test it in your browser (requires WebGL)](http://gl-vis.github.io/gl-surface-plot/)
+[Test it in your browser (requires WebGL)](http://gl-vis.github.io/gl-surface3d/)
 
 # Install
 
 ```
-npm install gl-surface-plot
+npm install gl-surface3d
 ```
 
 # Basic Interface
 
 ## Constructor
 
-#### `var surface = require('gl-surface-plot')(params)`
+#### `var surface = require('gl-surface3d')(params)`
 Creates a surface plot object.  `params` is an object with any of the following parameters
 
 * `gl` is a WebGL context

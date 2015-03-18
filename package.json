@@ -1,7 +1,7 @@
 {
-  "name": "gl-surface-plot",
-  "version": "7.0.0",
-  "description": "Renders 2D surfaces",
+  "name": "gl-surface3d",
+  "version": "1.0.0",
+  "description": "Renders parametric surfaces in 3D",
   "main": "surface.js",
   "directories": {
     "example": "example"
@@ -47,7 +47,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/gl-vis/gl-surface-plot.git"
+    "url": "git://github.com/gl-vis/gl-surface3d.git"
   },
   "keywords": [
     "plot",
@@ -61,7 +61,7 @@
   "author": "Mikola Lysenko",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gl-vis/gl-surface-plot/issues"
+    "url": "https://github.com/gl-vis/gl-surface3d/issues"
   },
-  "homepage": "https://github.com/gl-vis/gl-surface-plot"
+  "homepage": "https://github.com/gl-vis/gl-surface3d"
 }
