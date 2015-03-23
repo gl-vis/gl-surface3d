@@ -171,6 +171,8 @@ function SurfacePlot(
   this.specularLight      = 2.0
   this.roughness          = 0.5
   this.fresnel            = 1.5
+
+  this.dirty              = true
 }
 
 var proto = SurfacePlot.prototype
@@ -698,9 +700,8 @@ function handleColor(param) {
 proto.update = function(params) {
   params = params || {}
 
-  if('pickId' in params) {
-    this.pickId = params.pickId|0
-  }
+  this.dirty = true
+
   if('contourWidth' in params) {
     this.contourWidth = handleArray(params.contourWidth, Number)
   }
@@ -724,9 +725,6 @@ proto.update = function(params) {
   if('surfaceProject' in params) {
     this.surfaceProject = params.surfaceProject
   }
-  if('axesBounds' in params) {
-    this.axesBounds = params.axesBounds
-  }
   if('dynamicColor' in params) {
     this.dynamicColor = handleColor(params.dynamicColor)
   }
@@ -735,6 +733,9 @@ proto.update = function(params) {
   }
   if('dynamicWidth' in params) {
     this.dynamicWidth = handleArray(params.dynamicWidth, Number)
+  }
+  if('opacity' in params) {
+    this.opacity = params.opacity
   }
 
   var field = params.field || (params.coords && params.coords[2])
