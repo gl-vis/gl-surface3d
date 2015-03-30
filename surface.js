@@ -16,6 +16,7 @@ var multiply      = require('gl-mat4/multiply')
 var invert        = require('gl-mat4/invert')
 var bsearch       = require('binary-search-bounds')
 var gradient      = require('ndarray-gradient')
+var ndarray       = require('ndarray')
 var shaders       = require('./lib/shaders')
 
 var createShader            = shaders.createShader
@@ -737,11 +738,18 @@ proto.update = function(params) {
     this.opacity = params.opacity
   }
 
-  var field = params.field || (params.coords && params.coords[2])
+  var field = params.field || (params.coords && params.coords[2]) || null
+
+  if(!field) {
+    if(this._field[2].shape[0] || this._field[2].shape[2]) {
+      field = this._field[2].lo(1,1).hi(this._field.shape[0]-2, this._field.shape[1]-2)
+    } else {
+      field = this._field[2].hi(0,0)
+    }
+  }
 
   //Update field
-  if('field' in params) {
-    var field = params.field
+  if('field' in params || 'coords' in params) {
     var fsize = (field.shape[0]+2)*(field.shape[1]+2)
 
     //Resize if necessary
@@ -1175,7 +1183,7 @@ proto.highlight = function(selection) {
 function createSurfacePlot(params) {
 
   var gl = params.gl
-  var field = params.field || (params.coords && params.coords[2])
+  var field = params.field || (params.coords && params.coords[2]) || ndarray([], [0,0])
 
   var shader = createShader(gl)
   var pickShader = createPickShader(gl)
@@ -1243,7 +1251,6 @@ function createSurfacePlot(params) {
   for(var id in params) {
     nparams[id] = params[id]
   }
-  nparams.field = field
   nparams.colormap = nparams.colormap || 'jet'
 
   surface.update(nparams)
