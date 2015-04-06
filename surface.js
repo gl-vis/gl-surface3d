@@ -58,11 +58,12 @@ var PERMUTATIONS = [
   }
 })()
 
-function SurfacePickResult(position, index, uv, level) {
+function SurfacePickResult(position, index, uv, level, dataCoordinate) {
   this.position     = position
   this.index        = index
   this.uv           = uv
   this.level        = level
+  this.dataCoordinate = dataCoordinate
 }
 
 function genColormap(name) {
@@ -119,7 +120,7 @@ function SurfacePlot(
   this._contourCounts     = [[], [], []]
   this._vertexCount       = 0
   
-  this._pickResult        = new SurfacePickResult([0,0,0], [0,0], [0,0], [0,0,0])
+  this._pickResult        = new SurfacePickResult([0,0,0], [0,0], [0,0], [0,0,0], [0,0,0])
 
   this._dynamicBuffer     = dynamicBuffer
   this._dynamicVAO        = dynamicVAO
@@ -636,6 +637,10 @@ proto.pick = function(selection) {
 
   result.uv[0] = x/shape[0]
   result.uv[1] = y/shape[1]
+
+  for(var i=0; i<3; ++i) {
+    result.dataCoordinate[i] = this._field[i].get(result.index[0], result.index[1])
+  }
 
   return result
 }
