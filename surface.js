@@ -259,6 +259,7 @@ var UNIFORMS = {
   model:      IDENTITY,
   view:       IDENTITY,
   projection: IDENTITY,
+  inverseModel: IDENTITY.slice(),
   lowerBound: [0,0,0],
   upperBound: [0,0,0],
   colorMap:   0,
@@ -296,6 +297,8 @@ function drawCore(params, transparent) {
   uniforms.lowerBound   = this.bounds[0]
   uniforms.upperBound   = this.bounds[1]
   uniforms.contourColor = this.contourColor[0]
+
+  uniforms.inverseModel = invert(uniforms.inverseModel, uniforms.model)
 
   for(var i=0; i<2; ++i) {
     var clipClamped = uniforms.clipBounds[i]
@@ -472,6 +475,7 @@ var PICK_UNIFORMS = {
   model:          IDENTITY,
   view:           IDENTITY,
   projection:     IDENTITY,
+  inverseModel:   IDENTITY,
   clipBounds:     [[0,0,0],[0,0,0]],
   height:         0.0,
   shape:          [0,0],
@@ -1186,7 +1190,6 @@ proto.highlight = function(selection) {
 }
 
 function createSurfacePlot(params) {
-
   var gl = params.gl
   var field = params.field || (params.coords && params.coords[2]) || ndarray([], [0,0])
 

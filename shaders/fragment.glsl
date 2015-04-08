@@ -22,7 +22,7 @@ void main() {
   vec3 N = normalize(surfaceNormal);
   vec3 V = normalize(eyeDirection);
   vec3 L = normalize(lightDirection);
-
+  
   if(gl_FrontFacing) {
     N = -N;
   }
