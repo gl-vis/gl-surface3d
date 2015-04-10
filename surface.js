@@ -751,7 +751,7 @@ proto.update = function(params) {
 
   if(!field) {
     if(this._field[2].shape[0] || this._field[2].shape[2]) {
-      field = this._field[2].lo(1,1).hi(this._field.shape[0]-2, this._field.shape[1]-2)
+      field = this._field[2].lo(1,1).hi(this._field[2].shape[0]-2, this._field[2].shape[1]-2)
     } else {
       field = this._field[2].hi(0,0)
     }
@@ -945,7 +945,6 @@ proto.update = function(params) {
   if('levels' in params) {
     var levels = params.levels
     if(!Array.isArray(levels[0])) {
-
       levels = [ [], [], levels ]
     } else {
       levels = levels.slice()
