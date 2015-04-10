@@ -1,6 +1,6 @@
 {
   "name": "gl-surface3d",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Renders parametric surfaces in 3D",
   "main": "surface.js",
   "directories": {
