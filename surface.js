@@ -861,9 +861,16 @@ proto.update = function(params) {
         var ny = dzdu * dxdv - dzdv * dxdu
         var nz = dxdu * dydv - dxdv * dydu
 
-        var nl = nx*nx + ny * ny + nz * nz
-        if(nl < 1e-6) {
-          nl = 0.0
+        var nl = Math.sqrt(nx*nx + ny * ny + nz * nz)
+        if(nl < 1e-8) {
+          nl = Math.max(Math.abs(nx), Math.abs(ny), Math.abs(nz))
+          if(nl < 1e-8) {
+            nz = 1.0
+            ny = nx = 0.0
+            nl = 1.0
+          } else {
+            nl = 1.0/ nl
+          }
         } else {
           nl = 1.0 / Math.sqrt(nl)
         }
