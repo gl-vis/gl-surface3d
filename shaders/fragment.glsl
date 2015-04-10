@@ -1,6 +1,6 @@
 precision mediump float;
 
-#pragma glslify: cookTorrance = require(glsl-specular-cook-torrance)
+#pragma glslify: beckmann = require(glsl-specular-beckmann)
 
 uniform vec3 lowerBound, upperBound;
 uniform float contourTint;
@@ -27,7 +27,7 @@ void main() {
     N = -N;
   }
 
-  float specular = cookTorrance(L, V, N, roughness, fresnel);
+  float specular = beckmann(L, V, N, roughness);
   float diffuse  = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);
 
   float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);
