@@ -22,7 +22,7 @@ void main() {
   vec3 N = normalize(surfaceNormal);
   vec3 V = normalize(eyeDirection);
   vec3 L = normalize(lightDirection);
-  
+
   if(gl_FrontFacing) {
     N = -N;
   }
@@ -33,6 +33,6 @@ void main() {
   float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);
   vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));
   vec4 litColor = surfaceColor.a * vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1,1,1) * specular,  1.0);
-  
+
   gl_FragColor = mix(litColor, contourColor, contourTint) * opacity;
 }

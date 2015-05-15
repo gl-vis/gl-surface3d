@@ -87,13 +87,13 @@ function clampVec(v) {
 }
 
 function SurfacePlot(
-  gl, 
-  shape, 
-  bounds, 
-  shader, 
-  pickShader, 
-  coordinates, 
-  vao, 
+  gl,
+  shape,
+  bounds,
+  shader,
+  pickShader,
+  coordinates,
+  vao,
   colorMap,
   contourShader,
   contourPickShader,
@@ -119,7 +119,7 @@ function SurfacePlot(
   this._contourOffsets    = [[], [], []]
   this._contourCounts     = [[], [], []]
   this._vertexCount       = 0
-  
+
   this._pickResult        = new SurfacePickResult([0,0,0], [0,0], [0,0], [0,0,0], [0,0,0])
 
   this._dynamicBuffer     = dynamicBuffer
@@ -154,14 +154,14 @@ function SurfacePlot(
                              [ false, false, false ]]
 
   //Store xyz fields, need this for picking
-  this._field             = [ 
-      ndarray(pool.mallocFloat(1024), [0,0]), 
-      ndarray(pool.mallocFloat(1024), [0,0]), 
+  this._field             = [
+      ndarray(pool.mallocFloat(1024), [0,0]),
+      ndarray(pool.mallocFloat(1024), [0,0]),
       ndarray(pool.mallocFloat(1024), [0,0]) ]
 
   this.pickId             = 1
   this.clipBounds         = [[-Infinity,-Infinity,-Infinity],[Infinity,Infinity,Infinity]]
-  
+
   this.snapToData         = false
 
   this.opacity            = 1.0
@@ -207,7 +207,7 @@ var PROJECT_DATA = {
   showContour: false,
   projections: [IDENTITY.slice(), IDENTITY.slice(), IDENTITY.slice()],
   clipBounds:   [
-    [[0,0,0], [0,0,0]], 
+    [[0,0,0], [0,0,0]],
     [[0,0,0], [0,0,0]],
     [[0,0,0], [0,0,0]]]
 }
@@ -218,7 +218,7 @@ function computeProjectionData(camera, obj) {
 
   var showSurface = obj.showSurface
   var showContour = obj.showContour
-  
+
   for(var i=0; i<3; ++i) {
     showSurface = showSurface || obj.surfaceProject[i]
     for(var j=0; j<3; ++j) {
@@ -238,7 +238,7 @@ function computeProjectionData(camera, obj) {
     axisSquish[5*i] = 0
     axisSquish[12+i] = obj.axesBounds[+(cubeAxis[i]>0)][i]
     multiply(axisSquish, camera.model, axisSquish)
-    
+
     var nclipBounds = PROJECT_DATA.clipBounds[i]
     for(var k=0; k<2; ++k) {
       for(var j=0; j<3; ++j) {
@@ -311,7 +311,7 @@ function drawCore(params, transparent) {
   uniforms.kdiffuse   = this.diffuseLight
   uniforms.kspecular  = this.specularLight
 
-  uniforms.shape = 
+  uniforms.shape =
 
   uniforms.roughness  = this.roughness
   uniforms.fresnel    = this.fresnel
@@ -427,7 +427,7 @@ function drawCore(params, transparent) {
         }
       }
     }
-    
+
     //Draw dynamic contours
     vao = this._dynamicVAO
     vao.bind()
@@ -492,7 +492,7 @@ proto.drawPick = function(params) {
   params = params || {}
   var gl = this.gl
   gl.disable(gl.CULL_FACE)
-  
+
   var uniforms = PICK_UNIFORMS
   uniforms.model = params.model || IDENTITY
   uniforms.view = params.view || IDENTITY
@@ -556,12 +556,12 @@ proto.drawPick = function(params) {
     for(var i=0; i<3; ++i) {
       shader.uniforms.model      = projectData.projections[i]
       shader.uniforms.clipBounds = projectData.clipBounds[i]
-      
+
       for(var j=0; j<3; ++j) {
         if(!this.contourProject[i][j]) {
           continue
         }
-        
+
         shader.uniforms.permutation = PERMUTATIONS[j]
         gl.lineWidth(this.contourWidth[j])
         for(var k=0; k<this.contourLevels[j].length; ++k) {
@@ -658,7 +658,7 @@ function padField(nfield, field) {
   ops.assign(nfield.lo(1,1).hi(shape[0], shape[1]), field)
 
   //Edges
-  ops.assign(nfield.lo(1).hi(shape[0], 1), 
+  ops.assign(nfield.lo(1).hi(shape[0], 1),
               field.hi(shape[0], 1))
   ops.assign(nfield.lo(1,nshape[1]-1).hi(shape[0],1),
               field.lo(0,shape[1]-1).hi(shape[0],1))
@@ -693,14 +693,14 @@ function toColor(x) {
 function handleColor(param) {
   if(Array.isArray(param)) {
     if(Array.isArray(param)) {
-      return [  toColor(param[0]), 
+      return [  toColor(param[0]),
                 toColor(param[1]),
                 toColor(param[2]) ]
     } else {
       var c = toColor(param)
-      return [ 
-        c.slice(), 
-        c.slice(), 
+      return [
+        c.slice(),
+        c.slice(),
         c.slice() ]
     }
   }
@@ -819,7 +819,7 @@ proto.update = function(params) {
 
         //Fill in field array
         padField(this._field[i], tick2)
-      }    
+      }
     } else {
       for(var i=0; i<2; ++i) {
         var offset = [0,0]
@@ -942,7 +942,7 @@ proto.update = function(params) {
     this._coordinateBuffer.update(tverts.subarray(0,tptr))
     pool.freeFloat(tverts)
     pool.free(normals.data)
-    
+
     //Update bounds
     this.bounds = [lo, hi]
   }
@@ -1016,7 +1016,7 @@ change_test:
   dd_loop:
             for(var dd=0; dd<2; ++dd) {
               parts[dd] = 0.0
-              var iu = (dim + dd + 1) % 3            
+              var iu = (dim + dd + 1) % 3
               for(var dx=0; dx<2; ++dx) {
                 var s = dx ? fx : 1.0 - fx
                 var r = Math.min(Math.max(ix+dx, 0), shape[0])|0
@@ -1118,8 +1118,8 @@ proto.highlight = function(selection) {
 
   var vertexCount = 0
   var shape = this.shape
-  var scratchBuffer = pool.mallocFloat(12 * shape[0] * shape[1]) 
-  
+  var scratchBuffer = pool.mallocFloat(12 * shape[0] * shape[1])
+
   for(var d=0; d<3; ++d) {
     if(!this.enableDynamic[d]) {
       this.dynamicLevel[d] = NaN
@@ -1152,13 +1152,13 @@ proto.highlight = function(selection) {
         var jx = Math.min(ix+1, shape[0])|0
         var fx = x - ix
         var hx = 1.0 - fx
-        
+
         var y  = +p[1]
         var iy = y|0
         var jy = Math.min(iy+1, shape[1])|0
         var fy = y - iy
         var hy = 1.0 - fy
-        
+
         var w00 = hx * hy
         var w01 = hx * fy
         var w10 = fx * hy
@@ -1203,7 +1203,7 @@ function createSurfacePlot(params) {
   var pickShader = createPickShader(gl)
   var contourShader = createContourShader(gl)
   var contourPickShader = createPickContourShader(gl)
-  
+
   var coordinateBuffer = createBuffer(gl)
   var vao = createVAO(gl, [
       { buffer: coordinateBuffer,
@@ -1226,7 +1226,7 @@ function createSurfacePlot(params) {
 
   var contourBuffer = createBuffer(gl)
   var contourVAO = createVAO(gl, [
-    { 
+    {
       buffer: contourBuffer,
       size: 4
     }])
@@ -1244,12 +1244,12 @@ function createSurfacePlot(params) {
   cmap.magFilter = gl.LINEAR
 
   var surface = new SurfacePlot(
-    gl, 
-    [0,0], 
-    [[0,0,0], [0,0,0]], 
+    gl,
+    [0,0],
+    [[0,0,0], [0,0,0]],
     shader,
     pickShader,
-    coordinateBuffer, 
+    coordinateBuffer,
     vao,
     cmap,
     contourShader,

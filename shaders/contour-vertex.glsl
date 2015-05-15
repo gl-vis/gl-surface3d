@@ -19,7 +19,7 @@ void main() {
   clipPosition.z = clipPosition.z + zOffset;
 
   gl_Position = clipPosition;
-  value = height;
+  value = dataCoordinate.z;
   kill = -1.0;
   worldCoordinate = dataCoordinate;
   planeCoordinate = uv.zw;
