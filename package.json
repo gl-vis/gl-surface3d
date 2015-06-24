@@ -1,6 +1,6 @@
 {
   "name": "gl-surface3d",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Renders parametric surfaces in 3D",
   "main": "surface.js",
   "directories": {
@@ -26,8 +26,7 @@
     "surface-nets": "^1.0.2",
     "typedarray-pool": "^1.0.0"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "beefy --open --live example/example.js"
