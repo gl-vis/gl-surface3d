@@ -155,6 +155,8 @@ function SurfacePlot(
                              [ false, false, false ],
                              [ false, false, false ]]
 
+  this.colorBounds        = [ false, false ]
+
   //Store xyz fields, need this for picking
   this._field             = [
       ndarray(pool.mallocFloat(1024), [0,0]),
@@ -296,8 +298,8 @@ function drawCore(params, transparent) {
   uniforms.model        = params.model || IDENTITY
   uniforms.view         = params.view || IDENTITY
   uniforms.projection   = params.projection || IDENTITY
-  uniforms.lowerBound   = this.bounds[0]
-  uniforms.upperBound   = this.bounds[1]
+  uniforms.lowerBound   = [this.bounds[0][0], this.bounds[0][1], this.colorBounds[0] || this.bounds[0][2]]
+  uniforms.upperBound   = [this.bounds[1][0], this.bounds[1][1], this.colorBounds[1] || this.bounds[1][2]]
   uniforms.contourColor = this.contourColor[0]
 
   uniforms.inverseModel = invert(uniforms.inverseModel, uniforms.model)
@@ -747,6 +749,9 @@ proto.update = function(params) {
   }
   if('opacity' in params) {
     this.opacity = params.opacity
+  }
+  if('colorBounds' in params) {
+    this.colorBounds = params.colorBounds
   }
 
   var field = params.field || (params.coords && params.coords[2]) || null
