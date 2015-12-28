@@ -66,10 +66,12 @@ function SurfacePickResult(position, index, uv, level, dataCoordinate) {
   this.dataCoordinate = dataCoordinate
 }
 
+var N_COLORS = 265
+
 function genColormap(name) {
   var x = pack([colormap({
     colormap: name,
-    nshades: 256,
+    nshades: N_COLORS,
     format: 'rgba'
   }).map(function(c) {
     return [c[0], c[1], c[2], 255*c[3]]
@@ -1239,7 +1241,7 @@ function createSurfacePlot(params) {
       type: gl.FLOAT
     }])
 
-  var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
+  var cmap = createTexture(gl, 1, N_COLORS, gl.RGBA, gl.UNSIGNED_BYTE)
   cmap.minFilter = gl.LINEAR
   cmap.magFilter = gl.LINEAR
 
