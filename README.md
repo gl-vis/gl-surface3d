@@ -51,6 +51,7 @@ Creates a surface plot object.  `params` is an object with any of the following 
 * `field` a new 2D field encoded as an ndarray
 * `coords` is an array of 3 2D fields, each encoded as ndarrays (for parameteric surfaces)
 * `colormap` the name of the new color map for the surface
+* `colorBounds` sets the z range for the colormap
 * `ticks` is a pair of arrays of ticks representing the spacing of the points for the axes of the surface
 * `showSurface` if set, draw the surface
 * `showContour` if set, draw contour lines
