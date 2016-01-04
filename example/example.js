@@ -3,13 +3,13 @@
 var shell = require("gl-now")({ clearColor: [0,0,0,0] })
 var camera = require("game-shell-orbit-camera")(shell)
 var createSurface = require("../surface.js")
-var createAxes = require("gl-axes")
-var createSpikes = require("gl-spikes")
+var createAxes = require("gl-axes3d")
+var createSpikes = require("gl-spikes3d")
 var ndarray = require("ndarray")
 var fill = require("ndarray-fill")
 var diric = require("dirichlet")
 var glm = require("gl-matrix")
-var createSelect = require("gl-select")
+var createSelect = require("gl-select-static")
 var mat4 = glm.mat4
 
 var surface, spikes, axes, select, target = null
@@ -37,7 +37,8 @@ shell.on("gl-init", function() {
 
   var coords = [
     ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1]),
-    ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1])
+    ndarray(new Float32Array(4*(size+1)*(size+1)), [2*size+1,2*size+1]),
+    field
   ]
 
   var x = coords[0]

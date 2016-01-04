@@ -66,10 +66,12 @@ function SurfacePickResult(position, index, uv, level, dataCoordinate) {
   this.dataCoordinate = dataCoordinate
 }
 
+var N_COLORS = 265
+
 function genColormap(name) {
   var x = pack([colormap({
     colormap: name,
-    nshades: 256,
+    nshades: N_COLORS,
     format: 'rgba'
   }).map(function(c) {
     return [c[0], c[1], c[2], 255*c[3]]
@@ -152,6 +154,8 @@ function SurfacePlot(
   this.contourProject     = [[ false, false, false ],
                              [ false, false, false ],
                              [ false, false, false ]]
+
+  this.colorBounds        = [ false, false ]
 
   //Store xyz fields, need this for picking
   this._field             = [
@@ -294,8 +298,8 @@ function drawCore(params, transparent) {
   uniforms.model        = params.model || IDENTITY
   uniforms.view         = params.view || IDENTITY
   uniforms.projection   = params.projection || IDENTITY
-  uniforms.lowerBound   = this.bounds[0]
-  uniforms.upperBound   = this.bounds[1]
+  uniforms.lowerBound   = [this.bounds[0][0], this.bounds[0][1], this.colorBounds[0] || this.bounds[0][2]]
+  uniforms.upperBound   = [this.bounds[1][0], this.bounds[1][1], this.colorBounds[1] || this.bounds[1][2]]
   uniforms.contourColor = this.contourColor[0]
 
   uniforms.inverseModel = invert(uniforms.inverseModel, uniforms.model)
@@ -745,6 +749,9 @@ proto.update = function(params) {
   }
   if('opacity' in params) {
     this.opacity = params.opacity
+  }
+  if('colorBounds' in params) {
+    this.colorBounds = params.colorBounds
   }
 
   var field = params.field || (params.coords && params.coords[2]) || null
@@ -1239,7 +1246,7 @@ function createSurfacePlot(params) {
       type: gl.FLOAT
     }])
 
-  var cmap = createTexture(gl, 1, 256, gl.RGBA, gl.UNSIGNED_BYTE)
+  var cmap = createTexture(gl, 1, N_COLORS, gl.RGBA, gl.UNSIGNED_BYTE)
   cmap.minFilter = gl.LINEAR
   cmap.magFilter = gl.LINEAR
 
