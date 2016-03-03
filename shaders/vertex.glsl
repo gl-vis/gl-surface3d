@@ -1,7 +1,7 @@
 precision mediump float;
 
 attribute vec4 uv;
-attribute vec2 f;
+attribute vec3 f;
 attribute vec3 normal;
 
 uniform mat4 model, view, projection, inverseModel;
@@ -17,10 +17,10 @@ void main() {
   vec4 worldPosition = model * vec4(worldCoordinate, 1.0);
   vec4 clipPosition = projection * view * worldPosition;
   gl_Position = clipPosition;
-  value = f.x;
   kill = f.y;
+  value = f.z;
   planeCoordinate = uv.xy;
-  
+
   //Lighting geometry parameters
   vec4 cameraCoordinate = view * worldPosition;
   cameraCoordinate.xyz /= cameraCoordinate.w;
