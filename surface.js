@@ -266,7 +266,6 @@ var UNIFORMS = {
   inverseModel: IDENTITY.slice(),
   lowerBound: [0,0,0],
   upperBound: [0,0,0],
-  intensityBounds: [0,0],
   colorMap:   0,
   clipBounds: [[0,0,0], [0,0,0]],
   height:     0.0,
@@ -302,7 +301,6 @@ function drawCore(params, transparent) {
   uniforms.lowerBound   = [this.bounds[0][0], this.bounds[0][1], this.colorBounds[0] || this.bounds[0][2]]
   uniforms.upperBound   = [this.bounds[1][0], this.bounds[1][1], this.colorBounds[1] || this.bounds[1][2]]
   uniforms.contourColor = this.contourColor[0]
-  uniforms.intensityBounds = this.intensityBounds
 
   uniforms.inverseModel = invert(uniforms.inverseModel, uniforms.model)
 
@@ -957,6 +955,17 @@ proto.update = function(params) {
         }
       }
     }
+
+    if(params.intensityBounds) {
+      lo_intensity = +params.intensityBounds[0]
+      hi_intensity = +params.intensityBounds[1]
+    }
+
+    //Scale all vertex intensities
+    for(var i=6; i<tptr; i+=10) {
+      tverts[i] = (tverts[i] - lo_intensity) / (hi_intensity - lo_intensity)
+    }
+
     this._vertexCount = vertexCount
     this._coordinateBuffer.update(tverts.subarray(0,tptr))
     pool.freeFloat(tverts)
@@ -964,7 +973,6 @@ proto.update = function(params) {
 
     //Update bounds
     this.bounds = [lo, hi]
-    this.intensityBounds = [lo_intensity, hi_intensity]
   }
 
   //Update level crossings
