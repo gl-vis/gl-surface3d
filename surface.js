@@ -24,7 +24,7 @@ var createContourShader     = shaders.createContourShader
 var createPickShader        = shaders.createPickShader
 var createPickContourShader = shaders.createPickContourShader
 
-var SURFACE_VERTEX_SIZE = 4 * (4 + 2 + 3)
+var SURFACE_VERTEX_SIZE = 4 * (4 + 3 + 3)
 
 var IDENTITY = [
   1, 0, 0, 0,
@@ -892,8 +892,10 @@ proto.update = function(params) {
     //Initialize surface
     var lo = [ Infinity, Infinity, Infinity]
     var hi = [-Infinity,-Infinity,-Infinity]
+    var lo_intensity =  Infinity
+    var hi_intensity = -Infinity
     var count   = (shape[0]-1) * (shape[1]-1) * 6
-    var tverts  = pool.mallocFloat(bits.nextPow2(9*count))
+    var tverts  = pool.mallocFloat(bits.nextPow2(10*count))
     var tptr    = 0
     var fptr    = 0
     var vertexCount = 0
@@ -919,9 +921,14 @@ proto.update = function(params) {
           var tx = this._field[0].get(r+1, c+1)
           var ty = this._field[1].get(r+1, c+1)
           var f  = this._field[2].get(r+1, c+1)
+          var vf = f
           var nx = normals.get(r+1, c+1, 0)
           var ny = normals.get(r+1, c+1, 1)
           var nz = normals.get(r+1, c+1, 2)
+
+          if(params.intensity) {
+            vf = params.intensity.get(r, c)
+          }
 
           tverts[tptr++] = r
           tverts[tptr++] = c
@@ -929,6 +936,7 @@ proto.update = function(params) {
           tverts[tptr++] = ty
           tverts[tptr++] = f
           tverts[tptr++] = 0
+          tverts[tptr++] = vf
           tverts[tptr++] = nx
           tverts[tptr++] = ny
           tverts[tptr++] = nz
@@ -936,15 +944,28 @@ proto.update = function(params) {
           lo[0] = Math.min(lo[0], tx)
           lo[1] = Math.min(lo[1], ty)
           lo[2] = Math.min(lo[2], f)
+          lo_intensity = Math.min(lo_intensity, vf)
 
           hi[0] = Math.max(hi[0], tx)
           hi[1] = Math.max(hi[1], ty)
           hi[2] = Math.max(hi[2], f)
+          hi_intensity = Math.max(hi_intensity, vf)
 
           vertexCount += 1
         }
       }
     }
+
+    if(params.intensityBounds) {
+      lo_intensity = +params.intensityBounds[0]
+      hi_intensity = +params.intensityBounds[1]
+    }
+
+    //Scale all vertex intensities
+    for(var i=6; i<tptr; i+=10) {
+      tverts[i] = (tverts[i] - lo_intensity) / (hi_intensity - lo_intensity)
+    }
+
     this._vertexCount = vertexCount
     this._coordinateBuffer.update(tverts.subarray(0,tptr))
     pool.freeFloat(tverts)
@@ -1219,7 +1240,7 @@ function createSurfacePlot(params) {
         offset: 0
       },
       { buffer: coordinateBuffer,
-        size: 2,
+        size: 3,
         stride: SURFACE_VERTEX_SIZE,
         offset: 16
       },
@@ -1227,7 +1248,7 @@ function createSurfacePlot(params) {
         buffer: coordinateBuffer,
         size: 3,
         stride: SURFACE_VERTEX_SIZE,
-        offset: 24
+        offset: 28
       }
     ])
 

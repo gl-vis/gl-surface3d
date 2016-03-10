@@ -30,8 +30,7 @@ void main() {
   float specular = beckmann(L, V, N, roughness);
   float diffuse  = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);
 
-  float interpValue = (value - lowerBound.z) / (upperBound.z - lowerBound.z);
-  vec4 surfaceColor = texture2D(colormap, vec2(interpValue, interpValue));
+  vec4 surfaceColor = texture2D(colormap, vec2(value, value));
   vec4 litColor = surfaceColor.a * vec4(diffuse * surfaceColor.rgb + kspecular * vec3(1,1,1) * specular,  1.0);
 
   gl_FragColor = mix(litColor, contourColor, contourTint) * opacity;
