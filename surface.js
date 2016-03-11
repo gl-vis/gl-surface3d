@@ -356,13 +356,13 @@ function drawCore(params, transparent) {
     //Draw it
     this._vao.bind()
 
-    if(this.showSurface) {
+    if(this.showSurface && this._vertexCount) {
       this._vao.draw(gl.TRIANGLES, this._vertexCount)
     }
 
     //Draw projections of surface
     for(var i=0; i<3; ++i) {
-      if(!this.surfaceProject[i]) {
+      if(!this.surfaceProject[i] || !this.vertexCount) {
         continue
       }
       this._shader.uniforms.model = projectData.projections[i]
@@ -395,6 +395,9 @@ function drawCore(params, transparent) {
       gl.lineWidth(this.contourWidth[i])
 
       for(var j=0; j<this.contourLevels[i].length; ++j) {
+        if(!this._contourCounts[i][j]) {
+          continue
+        }
         if(j === this.highlightLevel[i]) {
           shader.uniforms.contourColor = this.highlightColor[i]
           shader.uniforms.contourTint  = this.highlightTint[i]
@@ -551,8 +554,10 @@ proto.drawPick = function(params) {
       gl.lineWidth(this.contourWidth[j])
       shader.uniforms.permutation = PERMUTATIONS[j]
       for(var i=0; i<this.contourLevels[j].length; ++i) {
-        shader.uniforms.height = this.contourLevels[j][i]
-        vao.draw(gl.LINES, this._contourCounts[j][i], this._contourOffsets[j][i])
+        if(this._contourCounts[j][i]) {
+          shader.uniforms.height = this.contourLevels[j][i]
+          vao.draw(gl.LINES, this._contourCounts[j][i], this._contourOffsets[j][i])
+        }
       }
     }
 
@@ -569,8 +574,10 @@ proto.drawPick = function(params) {
         shader.uniforms.permutation = PERMUTATIONS[j]
         gl.lineWidth(this.contourWidth[j])
         for(var k=0; k<this.contourLevels[j].length; ++k) {
-          shader.uniforms.height = this.contourLevels[j][k]
-          vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
+          if(this._contourCounts[j][k]) {
+            shader.uniforms.height = this.contourLevels[j][k]
+            vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
+          }
         }
       }
     }
