@@ -965,6 +965,9 @@ proto.update = function (params) {
 
     // Update bounds
     this.bounds = [lo, hi]
+
+    // Save intensity
+    this.intensity = params.intensity || this._field[2]
   }
 
   // Update level crossings
@@ -1010,11 +1013,11 @@ proto.update = function (params) {
       var levelOffsets = []
       var levelCounts = []
 
-      var parts = [0, 0]
+      var parts = [0, 0, 0]
 
       for (i = 0; i < levels.length; ++i) {
         var graph = surfaceNets(this._field[dim], levels[i])
-        levelOffsets.push((contourVerts.length / 4) | 0)
+        levelOffsets.push((contourVerts.length / 5) | 0)
         vertexCount = 0
 
         edge_loop:
@@ -1033,7 +1036,7 @@ proto.update = function (params) {
 
             var hole = false
             dd_loop:
-            for (var dd = 0; dd < 2; ++dd) {
+            for (var dd = 0; dd < 3; ++dd) {
               parts[dd] = 0.0
               var iu = (dim + dd + 1) % 3
               for (dx = 0; dx < 2; ++dx) {
@@ -1043,7 +1046,11 @@ proto.update = function (params) {
                   var t = dy ? fy : 1.0 - fy
                   c = Math.min(Math.max(iy + dy, 0), shape[1]) | 0
 
-                  f = this._field[iu].get(r, c)
+                  if (dd < 2) {
+                    f = this._field[iu].get(r, c)
+                  } else {
+                    f = this.intensity.get(r, c)
+                  }
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
                     break dd_loop
@@ -1056,12 +1063,12 @@ proto.update = function (params) {
             }
 
             if (!hole) {
-              contourVerts.push(parts[0], parts[1], p[0], p[1])
+              contourVerts.push(parts[0], parts[1], p[0], p[1], parts[2])
               vertexCount += 1
             } else {
               if (k > 0) {
                 // If we already added first edge, pop off verts
-                for (var l = 0; l < 4; ++l) {
+                for (var l = 0; l < 5; ++l) {
                   contourVerts.pop()
                 }
                 vertexCount -= 1
@@ -1154,6 +1161,7 @@ proto.highlight = function (selection) {
     var f = this._field[d]
     var g = this._field[u]
     var h = this._field[v]
+    var intensity = this.intensity
 
     var graph = surfaceNets(f, levels[d])
     var edges = graph.cells
@@ -1245,8 +1253,17 @@ function createSurfacePlot (params) {
   var contourVAO = createVAO(gl, [
     {
       buffer: contourBuffer,
-      size: 4
-    }])
+      size: 4,
+      stride: 20,
+      offset: 0
+    },
+    {
+      buffer: contourBuffer,
+      size: 1,
+      stride: 20,
+      offset: 16
+    }
+  ])
 
   var dynamicBuffer = createBuffer(gl)
   var dynamicVAO = createVAO(gl, [

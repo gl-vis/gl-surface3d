@@ -1,6 +1,7 @@
 precision mediump float;
 
 attribute vec4 uv;
+attribute float f;
 
 uniform mat3 permutation;
 uniform mat4 model, view, projection;
@@ -19,7 +20,7 @@ void main() {
   clipPosition.z = clipPosition.z + zOffset;
 
   gl_Position = clipPosition;
-  value = uv.z;
+  value = f;
   kill = -1.0;
   worldCoordinate = dataCoordinate;
   planeCoordinate = uv.zw;

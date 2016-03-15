@@ -17,7 +17,7 @@ vec2 splitFloat(float v) {
 }
 
 void main() {
-  if(kill > 0.0 || 
+  if(kill > 0.0 ||
     any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {
     discard;
   }
