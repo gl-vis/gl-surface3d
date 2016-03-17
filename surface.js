@@ -968,6 +968,9 @@ proto.update = function (params) {
 
     // Save intensity
     this.intensity = params.intensity || this._field[2]
+
+    // Save intensity bound
+    this.intensityBounds = [lo_intensity, hi_intensity]
   }
 
   // Update level crossings
@@ -1049,7 +1052,7 @@ proto.update = function (params) {
                   if (dd < 2) {
                     f = this._field[iu].get(r, c)
                   } else {
-                    f = this.intensity.get(r, c)
+                    f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
                   }
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
