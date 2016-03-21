@@ -50,8 +50,9 @@ Creates a surface plot object.  `params` is an object with any of the following 
 * `gl` is a WebGL context
 * `field` a new 2D field encoded as an ndarray
 * `coords` is an array of 3 2D fields, each encoded as ndarrays (for parameteric surfaces)
-* `colormap` the name of the new color map for the surface
-* `colorBounds` sets the z range for the colormap
+* `intensity` a 2D intensity field (defaults to `field` or `coords[2] is not present)
+* `colormap` the name of the new color map for the surface (see list of names in `colormap` [docs](https://github.com/bpostlethwaite/colormap))
+* `intensityBounds` sets the intensity range for the colormap
 * `ticks` is a pair of arrays of ticks representing the spacing of the points for the axes of the surface
 * `showSurface` if set, draw the surface
 * `showContour` if set, draw contour lines
