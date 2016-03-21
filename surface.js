@@ -97,6 +97,7 @@ function SurfacePlot (
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
+  this.intensityBounds = [];
 
   this._shader = shader
   this._pickShader = pickShader
@@ -750,6 +751,7 @@ proto.update = function (params) {
   }
 
   var field = params.field || (params.coords && params.coords[2]) || null
+  var levelsChanged = false
 
   if (!field) {
     if (this._field[2].shape[0] || this._field[2].shape[2]) {
@@ -969,12 +971,15 @@ proto.update = function (params) {
     // Save intensity
     this.intensity = params.intensity || this._field[2]
 
+    if(this.intensityBounds[0] !== lo_intensity || this.intensityBounds[1] !== hi_intensity) {
+        levelsChanged = true
+    }
+
     // Save intensity bound
     this.intensityBounds = [lo_intensity, hi_intensity]
   }
 
   // Update level crossings
-  var levelsChanged = false
   if ('levels' in params) {
     var levels = params.levels
     if (!Array.isArray(levels[0])) {
