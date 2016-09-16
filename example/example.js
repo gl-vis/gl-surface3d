@@ -62,7 +62,7 @@ shell.on("gl-init", function() {
     contourLevels.push(20*(i+0.3)/6.0)
   }
 
-  
+
   surface = createSurface({
     gl: gl,
     field: field,
@@ -70,7 +70,8 @@ shell.on("gl-init", function() {
     lineWidth: 3,
     contourTint: 1,
     coords: coords,
-    contourProject: [[true,false,false], [true,false,false], [true,false,false]]
+    contourProject: [[true,false,false], [true,false,false], [true,false,false]],
+    vertexColor: false
     //surfaceProject: [true, true, true]
     //showContour: false
     //showSurface: false

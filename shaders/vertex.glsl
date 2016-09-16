@@ -6,11 +6,13 @@ attribute vec3 normal;
 
 uniform mat4 model, view, projection, inverseModel;
 uniform vec3 lightPosition, eyePosition;
+uniform sampler2D colormap;
 
 varying float value, kill;
 varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
 varying vec3 lightDirection, eyeDirection, surfaceNormal;
+varying vec4 vColor;
 
 void main() {
   worldCoordinate = vec3(uv.zw, f.x);
@@ -20,6 +22,8 @@ void main() {
   kill = f.y;
   value = f.z;
   planeCoordinate = uv.xy;
+
+  vColor = texture2D(colormap, vec2(value, value));
 
   //Lighting geometry parameters
   vec4 cameraCoordinate = view * worldPosition;

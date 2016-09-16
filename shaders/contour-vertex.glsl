@@ -6,11 +6,13 @@ attribute float f;
 uniform mat3 permutation;
 uniform mat4 model, view, projection;
 uniform float height, zOffset;
+uniform sampler2D colormap;
 
 varying float value, kill;
 varying vec3 worldCoordinate;
 varying vec2 planeCoordinate;
 varying vec3 lightDirection, eyeDirection, surfaceNormal;
+varying vec4 vColor;
 
 void main() {
   vec3 dataCoordinate = permutation * vec3(uv.xy, height);
@@ -24,6 +26,8 @@ void main() {
   kill = -1.0;
   worldCoordinate = dataCoordinate;
   planeCoordinate = uv.zw;
+
+  vColor = texture2D(colormap, vec2(value, value));
 
   //Don't do lighting for contours
   surfaceNormal   = vec3(1,0,0);
