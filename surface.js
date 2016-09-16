@@ -65,7 +65,7 @@ function SurfacePickResult (position, index, uv, level, dataCoordinate) {
   this.dataCoordinate = dataCoordinate
 }
 
-var N_COLORS = 265
+var N_COLORS = 256
 
 function genColormap (name) {
   var x = pack([colormap({
