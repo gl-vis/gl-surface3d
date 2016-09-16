@@ -26,7 +26,16 @@
     "surface-nets": "^1.0.2",
     "typedarray-pool": "^1.0.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "dirichlet": "^1.0.1",
+    "game-shell-orbit-camera": "^1.0.0",
+    "gl-axes3d": "^1.2.4",
+    "gl-matrix": "^2.3.2",
+    "gl-now": "^1.4.0",
+    "gl-select-static": "^2.0.2",
+    "gl-spikes3d": "^1.0.5",
+    "ndarray-fill": "^1.0.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "beefy --open --live example/example.js"

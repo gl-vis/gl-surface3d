@@ -65,7 +65,7 @@ function SurfacePickResult (position, index, uv, level, dataCoordinate) {
   this.dataCoordinate = dataCoordinate
 }
 
-var N_COLORS = 265
+var N_COLORS = 256
 
 function genColormap (name) {
   var x = pack([colormap({
@@ -167,6 +167,7 @@ function SurfacePlot (
   this.specularLight = 2.0
   this.roughness = 0.5
   this.fresnel = 1.5
+  this.vertexColor = 0;
 
   this.dirty = true
 }
@@ -273,7 +274,8 @@ var UNIFORMS = {
   eyePosition: [0, 0, 0],
   roughness: 1,
   fresnel: 1,
-  opacity: 1
+  opacity: 1,
+  vertexColor: 0
 }
 
 var MATRIX_INVERSE = IDENTITY.slice()
@@ -314,6 +316,8 @@ function drawCore (params, transparent) {
 
   uniforms.height = 0.0
   uniforms.permutation = DEFAULT_PERM
+
+  uniforms.vertexColor = this.vertexColor
 
   // Compute camera matrix inverse
   var invCameraMatrix = MATRIX_INVERSE
@@ -748,6 +752,9 @@ proto.update = function (params) {
   }
   if ('colorBounds' in params) {
     this.colorBounds = params.colorBounds
+  }
+  if ('vertexColor' in params) {
+    this.vertexColor = params.vertexColor ? 1 : 0;
   }
 
   var field = params.field || (params.coords && params.coords[2]) || null
@@ -1299,7 +1306,8 @@ function createSurfacePlot (params) {
     contourBuffer,
     contourVAO,
     dynamicBuffer,
-    dynamicVAO)
+    dynamicVAO
+  )
 
   var nparams = {
     levels: [[], [], []]

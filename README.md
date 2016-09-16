@@ -63,6 +63,7 @@ Creates a surface plot object.  `params` is an object with any of the following 
 * `dynamicWidth` the width of the dynamic isolines
 * `dynamicColors` the color of the dynamic isolines
 * `dynamicTint` the tint of the dynamic isolines
+* `vertexColor` interpolate color in fragment or vertex shader, useful for discontinuous functions ([ref](https://github.com/plotly/plotly.js/issues/940))
 
 
 ## Methods
