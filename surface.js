@@ -167,6 +167,7 @@ function SurfacePlot (
   this.specularLight = 2.0
   this.roughness = 0.5
   this.fresnel = 1.5
+  this.vertexColor = 0;
 
   this.dirty = true
 }
