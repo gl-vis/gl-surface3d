@@ -29,7 +29,7 @@ void main() {
     N = -N;
   }
 
-  float specular = beckmann(L, V, N, roughness);
+  float specular = max(beckmann(L, V, N, roughness), 0.);
   float diffuse  = min(kambient + kdiffuse * max(dot(N, L), 0.0), 1.0);
 
   //decide how to interpolate color — in vertex or in fragment
