@@ -404,7 +404,6 @@ function drawCore (params, transparent) {
         vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
       }
     }
-    vao.unbind()
 
     // Draw projections of surface
     for (i = 0; i < 3; ++i) {
@@ -429,6 +428,7 @@ function drawCore (params, transparent) {
         }
       }
     }
+    vao.unbind()
 
     // Draw dynamic contours
     vao = this._dynamicVAO
