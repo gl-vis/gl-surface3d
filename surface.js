@@ -390,15 +390,15 @@ function drawCore (params, transparent) {
       gl.lineWidth(this.contourWidth[i])
 
       for (j = 0; j < this.contourLevels[i].length; ++j) {
-        if (!this._contourCounts[i][j]) {
-          continue
-        }
         if (j === this.highlightLevel[i]) {
           shader.uniforms.contourColor = this.highlightColor[i]
           shader.uniforms.contourTint = this.highlightTint[i]
         } else if (j === 0 || (j - 1) === this.highlightLevel[i]) {
           shader.uniforms.contourColor = this.contourColor[i]
           shader.uniforms.contourTint = this.contourTint[i]
+        }
+        if (!this._contourCounts[i][j]) {
+          continue
         }
         shader.uniforms.height = this.contourLevels[i][j]
         vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
