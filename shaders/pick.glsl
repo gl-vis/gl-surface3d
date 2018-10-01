@@ -16,11 +16,18 @@ vec2 splitFloat(float v) {
   return vec2(upper / 255.0, floor(lower * 16.0) / 16.0);
 }
 
+bool outOfRange(float a, float b, float p) {
+  if (p > max(a, b)) return true;
+  if (p < min(a, b)) return true;
+  return false;
+}
+
 void main() {
-  if(kill > 0.0 ||
-    any(lessThan(worldCoordinate, clipBounds[0])) || any(greaterThan(worldCoordinate, clipBounds[1]))) {
-    discard;
-  }
+  if (kill > 0.0) discard;
+  if (outOfRange(clipBounds[0].x, clipBounds[1].x, worldCoordinate.x)) discard;
+  if (outOfRange(clipBounds[0].y, clipBounds[1].y, worldCoordinate.y)) discard;
+  if (outOfRange(clipBounds[0].z, clipBounds[1].z, worldCoordinate.z)) discard;
+
   vec2 ux = splitFloat(planeCoordinate.x / shape.x);
   vec2 uy = splitFloat(planeCoordinate.y / shape.y);
   gl_FragColor = vec4(pickId, ux.x, uy.x, ux.y + (uy.y/16.0));
