@@ -23,9 +23,10 @@ bool outOfRange(float a, float b, float p) {
 
 void main() {
   if (kill > 0.0) discard;
-  if (outOfRange(clipBounds[0].x, clipBounds[1].x, worldCoordinate.x)) discard;
-  if (outOfRange(clipBounds[0].y, clipBounds[1].y, worldCoordinate.y)) discard;
-  if (outOfRange(clipBounds[0].z, clipBounds[1].z, worldCoordinate.z)) discard;
+
+  if ((outOfRange(clipBounds[0].x, clipBounds[1].x, worldCoordinate.x)) ||
+      (outOfRange(clipBounds[0].y, clipBounds[1].y, worldCoordinate.y)) ||
+      (outOfRange(clipBounds[0].z, clipBounds[1].z, worldCoordinate.z))) discard;
 
   vec3 N = normalize(surfaceNormal);
   vec3 V = normalize(eyeDirection);
