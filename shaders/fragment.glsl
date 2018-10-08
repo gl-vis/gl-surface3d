@@ -1,6 +1,7 @@
 precision mediump float;
 
 #pragma glslify: beckmann = require(glsl-specular-beckmann)
+#pragma glslify: outOfRange = require(./reversed-scenes-out-of-range.glsl)
 
 uniform vec3 lowerBound, upperBound;
 uniform float contourTint;
@@ -14,12 +15,6 @@ varying float value, kill;
 varying vec3 worldCoordinate;
 varying vec3 lightDirection, eyeDirection, surfaceNormal;
 varying vec4 vColor;
-
-bool outOfRange(float a, float b, float p) {
-  if (p > max(a, b)) return true;
-  if (p < min(a, b)) return true;
-  return false;
-}
 
 void main() {
   if (kill > 0.0) discard;
