@@ -17,7 +17,7 @@
     "gl-texture2d": "^2.0.0",
     "gl-vao": "^1.1.1",
     "glsl-specular-beckmann": "^1.1.2",
-    "glsl-out-of-range": "^1.0.1",
+    "glsl-out-of-range": "^1.0.2",
     "glslify": "^6.1.0",
     "ndarray": "^1.0.16",
     "ndarray-gradient": "^1.0.0",
