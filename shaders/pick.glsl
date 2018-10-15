@@ -1,6 +1,6 @@
 precision mediump float;
 
-#pragma glslify: outOfRange = require(./reversed-scenes-out-of-range.glsl)
+#pragma glslify: outOfRange = require(glsl-out-of-range)
 
 uniform vec2 shape;
 uniform vec3 clipBounds[2];
@@ -21,9 +21,7 @@ vec2 splitFloat(float v) {
 void main() {
   if (kill > 0.0) discard;
 
-  if ((outOfRange(clipBounds[0].x, clipBounds[1].x, worldCoordinate.x)) ||
-      (outOfRange(clipBounds[0].y, clipBounds[1].y, worldCoordinate.y)) ||
-      (outOfRange(clipBounds[0].z, clipBounds[1].z, worldCoordinate.z))) discard;
+  if (outOfRange(clipBounds[0], clipBounds[1], worldCoordinate)) discard;
 
   vec2 ux = splitFloat(planeCoordinate.x / shape.x);
   vec2 uy = splitFloat(planeCoordinate.y / shape.y);

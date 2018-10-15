@@ -1,7 +1,7 @@
 precision mediump float;
 
 #pragma glslify: beckmann = require(glsl-specular-beckmann)
-#pragma glslify: outOfRange = require(./reversed-scenes-out-of-range.glsl)
+#pragma glslify: outOfRange = require(glsl-out-of-range)
 
 uniform vec3 lowerBound, upperBound;
 uniform float contourTint;
@@ -19,9 +19,7 @@ varying vec4 vColor;
 void main() {
   if (kill > 0.0) discard;
 
-  if ((outOfRange(clipBounds[0].x, clipBounds[1].x, worldCoordinate.x)) ||
-      (outOfRange(clipBounds[0].y, clipBounds[1].y, worldCoordinate.y)) ||
-      (outOfRange(clipBounds[0].z, clipBounds[1].z, worldCoordinate.z))) discard;
+  if (outOfRange(clipBounds[0], clipBounds[1], worldCoordinate)) discard;
 
   vec3 N = normalize(surfaceNormal);
   vec3 V = normalize(eyeDirection);
