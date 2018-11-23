@@ -654,63 +654,27 @@ proto.pick = function (selection) {
   return result
 }
 
-proto.padField = function(field_OUT, field_IN) {
-
-  console.log("field_IN=", field_IN);
-  console.log("field_OUT=", field_OUT);
-
-  var num_IN  = field_IN.shape.slice()
-  var num_OUT = field_OUT.shape.slice()
-
-  var outW = num_OUT[0] - 1;
-  var outH = num_OUT[1] - 1;
-
-  var inW = num_IN[0] - 1;
-  var inH = num_IN[1] - 1;
+proto.padField = function(dstField, srcField) {
+  var srcShape = srcField.shape.slice()
+  var dstShape = dstField.shape.slice()
 
   // Center
-
-  ops.assign(
-    field_OUT.lo(1, 1).hi(1 + inW, 1 + inH),
-    field_IN
-  )
+  ops.assign(dstField.lo(1, 1).hi(srcShape[0], srcShape[1]), srcField)
 
   // Edges
-
-  ops.assign(
-    field_OUT.lo(0, 1).hi(1, 1 + inH),
-    field_IN.hi(1)
-  );
-
-  ops.assign(
-    field_OUT.lo(1).hi(1 + inW, 1),
-    field_IN.hi(1 + inW, 1)
-  );
-
-  ops.assign(
-    field_OUT.lo(outW, 1).hi(1, 1 + inH),
-    field_IN.lo(inW)
-  );
-
-  ops.assign(
-    field_OUT.lo(1, outH).hi(1 + inW, 1),
-    field_IN.lo(0, inH).hi(1 + inW, 1)
-  );
-
+  ops.assign(dstField.lo(1).hi(srcShape[0], 1),
+    srcField.hi(srcShape[0], 1))
+  ops.assign(dstField.lo(1, dstShape[1] - 1).hi(srcShape[0], 1),
+    srcField.lo(0, srcShape[1] - 1).hi(srcShape[0], 1))
+  ops.assign(dstField.lo(0, 1).hi(1, srcShape[1]),
+    srcField.hi(1))
+  ops.assign(dstField.lo(dstShape[0] - 1, 1).hi(1, srcShape[1]),
+    srcField.lo(srcShape[0] - 1))
   // Corners
-
-  var items = [
-      [0, 0],
-      [0, outH],
-      [outW, 0],
-      [outW, outH]
-  ];
-
-  for (var i = 0; i < 4; ++i) {
-      var a = items[i][0];
-      var b = items[i][1];
-      field_OUT.set(a, b, field_IN.get(a, b));
-  }
+  dstField.set(0, 0, srcField.get(0, 0))
+  dstField.set(0, dstShape[1] - 1, srcField.get(0, srcShape[1] - 1))
+  dstField.set(dstShape[0] - 1, 0, srcField.get(srcShape[0] - 1, 0))
+  dstField.set(dstShape[0] - 1, dstShape[1] - 1, srcField.get(srcShape[0] - 1, srcShape[1] - 1))
 }
 
 function handleArray (param, ctor) {
