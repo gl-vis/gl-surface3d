@@ -167,7 +167,7 @@ function SurfacePlot (
   this.specularLight = 2.0
   this.roughness = 0.5
   this.fresnel = 1.5
-  this.vertexColor = 0;
+  this.vertexColor = 0
 
   this.dirty = true
 }
@@ -654,27 +654,27 @@ proto.pick = function (selection) {
   return result
 }
 
-function padField (nfield, field) {
-  var shape = field.shape.slice()
-  var nshape = nfield.shape.slice()
+proto.padField = function(dstField, srcField) {
+  var srcShape = srcField.shape.slice()
+  var dstShape = dstField.shape.slice()
 
   // Center
-  ops.assign(nfield.lo(1, 1).hi(shape[0], shape[1]), field)
+  ops.assign(dstField.lo(1, 1).hi(srcShape[0], srcShape[1]), srcField)
 
   // Edges
-  ops.assign(nfield.lo(1).hi(shape[0], 1),
-    field.hi(shape[0], 1))
-  ops.assign(nfield.lo(1, nshape[1] - 1).hi(shape[0], 1),
-    field.lo(0, shape[1] - 1).hi(shape[0], 1))
-  ops.assign(nfield.lo(0, 1).hi(1, shape[1]),
-    field.hi(1))
-  ops.assign(nfield.lo(nshape[0] - 1, 1).hi(1, shape[1]),
-    field.lo(shape[0] - 1))
+  ops.assign(dstField.lo(1).hi(srcShape[0], 1),
+    srcField.hi(srcShape[0], 1))
+  ops.assign(dstField.lo(1, dstShape[1] - 1).hi(srcShape[0], 1),
+    srcField.lo(0, srcShape[1] - 1).hi(srcShape[0], 1))
+  ops.assign(dstField.lo(0, 1).hi(1, srcShape[1]),
+    srcField.hi(1))
+  ops.assign(dstField.lo(dstShape[0] - 1, 1).hi(1, srcShape[1]),
+    srcField.lo(srcShape[0] - 1))
   // Corners
-  nfield.set(0, 0, field.get(0, 0))
-  nfield.set(0, nshape[1] - 1, field.get(0, shape[1] - 1))
-  nfield.set(nshape[0] - 1, 0, field.get(shape[0] - 1, 0))
-  nfield.set(nshape[0] - 1, nshape[1] - 1, field.get(shape[0] - 1, shape[1] - 1))
+  dstField.set(0, 0, srcField.get(0, 0))
+  dstField.set(0, dstShape[1] - 1, srcField.get(0, srcShape[1] - 1))
+  dstField.set(dstShape[0] - 1, 0, srcField.get(srcShape[0] - 1, 0))
+  dstField.set(dstShape[0] - 1, dstShape[1] - 1, srcField.get(srcShape[0] - 1, srcShape[1] - 1))
 }
 
 function handleArray (param, ctor) {
@@ -781,7 +781,7 @@ proto.update = function (params) {
 
     // Pad field
     this._field[2] = ndarray(this._field[2].data, [field.shape[0] + 2, field.shape[1] + 2])
-    padField(this._field[2], field)
+    this.padField(this._field[2], field)
 
     // Save shape of field
     this.shape = field.shape.slice()
@@ -809,7 +809,7 @@ proto.update = function (params) {
             throw new Error('gl-surface: coords have incorrect shape')
           }
         }
-        padField(this._field[i], coord)
+        this.padField(this._field[i], coord)
       }
     } else if (params.ticks) {
       var ticks = params.ticks
@@ -830,7 +830,7 @@ proto.update = function (params) {
         tick2.stride[i ^ 1] = 0
 
         // Fill in field array
-        padField(this._field[i], tick2)
+        this.padField(this._field[i], tick2)
       }
     } else {
       for (i = 0; i < 2; ++i) {
