@@ -404,7 +404,7 @@ function drawCore (params, transparent) {
         if (!this._contourCounts[i][j]) {
           continue
         }
-        shader.uniforms.height = this.contourLevels[i][j]
+        shader.uniforms.height = this.contourLevels[i][j] + this.objectOffset[i]
         vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
       }
     }
@@ -427,7 +427,7 @@ function drawCore (params, transparent) {
             shader.uniforms.contourColor = this.contourColor[j]
             shader.uniforms.contourTint = this.contourTint[j]
           }
-          shader.uniforms.height = this.contourLevels[j][k]
+          shader.uniforms.height = this.contourLevels[j][k] + this.objectOffset[j] // i or j?
           vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
         }
       }
@@ -451,7 +451,7 @@ function drawCore (params, transparent) {
 
       shader.uniforms.contourColor = this.dynamicColor[i]
       shader.uniforms.contourTint = this.dynamicTint[i]
-      shader.uniforms.height = this.dynamicLevel[i]
+      shader.uniforms.height = this.dynamicLevel[i] + this.objectOffset[i]
       vao.draw(gl.LINES, this._dynamicCounts[i], this._dynamicOffsets[i])
 
       for (j = 0; j < 3; ++j) {
@@ -554,7 +554,7 @@ proto.drawPick = function (params) {
       shader.uniforms.permutation = PERMUTATIONS[j]
       for (i = 0; i < this.contourLevels[j].length; ++i) {
         if (this._contourCounts[j][i]) {
-          shader.uniforms.height = this.contourLevels[j][i]
+          shader.uniforms.height = this.contourLevels[j][i] + this.objectOffset[j]
           vao.draw(gl.LINES, this._contourCounts[j][i], this._contourOffsets[j][i])
         }
       }
@@ -574,7 +574,7 @@ proto.drawPick = function (params) {
         gl.lineWidth(this.contourWidth[j])
         for (var k = 0; k < this.contourLevels[j].length; ++k) {
           if (this._contourCounts[j][k]) {
-            shader.uniforms.height = this.contourLevels[j][k]
+            shader.uniforms.height = this.contourLevels[j][k] + this.objectOffset[j] // i or j
             vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
           }
         }
@@ -718,8 +718,11 @@ function handleColor (param) {
 proto.update = function (params) {
   params = params || {}
 
-  this.objectOffset = params.objectOffset
-  this.objectScale = params.objectScale
+  this.objectOffset = params.objectOffset || this.objectOffset
+  this.objectScale = params.objectScale || this.objectScale
+
+  console.log("this.objectOffset=", this.objectOffset);
+  console.log("this.objectScale=", this.objectScale);
 
   this.dirty = true
 
@@ -1038,6 +1041,8 @@ proto.update = function (params) {
     var contourVerts = []
 
     for (var dim = 0; dim < 3; ++dim) {
+      //var otherDim = (dim + 2) % 3
+
       levels = this.contourLevels[dim]
       var levelOffsets = []
       var levelCounts = []
@@ -1046,6 +1051,7 @@ proto.update = function (params) {
 
       for (i = 0; i < levels.length; ++i) {
         var graph = surfaceNets(this._field[dim], levels[i])
+
         levelOffsets.push((contourVerts.length / 5) | 0)
         vertexCount = 0
 
@@ -1064,10 +1070,13 @@ proto.update = function (params) {
             var fy = y - iy
 
             var hole = false
-            dd_loop:
-            for (var dd = 0; dd < 3; ++dd) {
-              parts[dd] = 0.0
-              var iu = (dim + dd + 1) % 3
+            axis_loop:
+            for (var axis = 0; axis < 3; ++axis) {
+
+              var offset = this.objectOffset[axis]
+
+              parts[axis] = 0.0 //+ offset
+              var iu = (dim + axis + 1) % 3
               for (dx = 0; dx < 2; ++dx) {
                 var s = dx ? fx : 1.0 - fx
                 r = Math.min(Math.max(ix + dx, 0), shape[0]) | 0
@@ -1075,24 +1084,34 @@ proto.update = function (params) {
                   var t = dy ? fy : 1.0 - fy
                   c = Math.min(Math.max(iy + dy, 0), shape[1]) | 0
 
-                  if (dd < 2) {
-                    f = this._field[iu].get(r, c)
+                  if (axis < 2) {
+                    f = this._field[iu].get(r, c) + offset
                   } else {
-                    f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
+                    f = this._field[iu].get(r, c) + offset
+                    //f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
+                    //f = (this.intensity.get(r, c) - this.objectOffset[0]) / (this.objectOffset[1] - this.objectOffset[0])
                   }
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
-                    break dd_loop
+                    break axis_loop
                   }
 
+                  //f += this.objectOffset[2]
+
                   var w = s * t
-                  parts[dd] += w * f
+                  parts[axis] += w * f
                 }
               }
             }
 
             if (!hole) {
-              contourVerts.push(parts[0], parts[1], p[0], p[1], parts[2])
+              contourVerts.push(
+                parts[0], // + this.objectOffset[0],
+                parts[1], // + this.objectOffset[1],
+                p[0],
+                p[1],
+                parts[2] //+ this.objectOffset[2]
+              )
               vertexCount += 1
             } else {
               if (k > 0) {
@@ -1112,7 +1131,10 @@ proto.update = function (params) {
       // Store results
       this._contourOffsets[dim] = levelOffsets
       this._contourCounts[dim] = levelCounts
+
     }
+
+
 
     var floatBuffer = pool.mallocFloat(contourVerts.length)
     for (i = 0; i < contourVerts.length; ++i) {
