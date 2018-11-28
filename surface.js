@@ -93,11 +93,15 @@ function SurfacePlot (
   contourBuffer,
   contourVAO,
   dynamicBuffer,
-  dynamicVAO) {
+  dynamicVAO,
+  worldOffset,
+  worldScale) {
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
-  this.intensityBounds = [];
+  this.worldOffset = worldOffset
+  this.worldScale = worldScale
+  this.intensityBounds = []
 
   this._shader = shader
   this._pickShader = pickShader
@@ -714,6 +718,9 @@ function handleColor (param) {
 proto.update = function (params) {
   params = params || {}
 
+  this.worldOffset = params.worldOffset
+  this.worldScale = params.worldScale
+
   this.dirty = true
 
   if ('contourWidth' in params) {
@@ -920,9 +927,9 @@ proto.update = function (params) {
           var r = i + QUAD[k][0]
           var c = j + QUAD[k][1]
 
-          var tx = this._field[0].get(r + 1, c + 1)
-          var ty = this._field[1].get(r + 1, c + 1)
-          f = this._field[2].get(r + 1, c + 1)
+          var tx = this._field[0].get(r + 1, c + 1) + this.worldOffset[0]
+          var ty = this._field[1].get(r + 1, c + 1) + this.worldOffset[1]
+          f =      this._field[2].get(r + 1, c + 1) + this.worldOffset[2]
           var vf = f
           nx = normals.get(r + 1, c + 1, 0)
           ny = normals.get(r + 1, c + 1, 1)
@@ -959,8 +966,14 @@ proto.update = function (params) {
     }
 
     if (params.intensityBounds) {
-      lo_intensity = +params.intensityBounds[0]
-      hi_intensity = +params.intensityBounds[1]
+      lo_intensity = params.intensityBounds[0]
+      hi_intensity = params.intensityBounds[1]
+
+      lo_intensity *= params.worldScale[2]
+      hi_intensity *= params.worldScale[2]
+
+      //lo_intensity -= params.worldOffset[2]
+      //hi_intensity -= params.worldOffset[2]
     }
 
     // Scale all vertex intensities
@@ -1177,7 +1190,6 @@ proto.highlight = function (selection) {
     var f = this._field[d]
     var g = this._field[u]
     var h = this._field[v]
-    var intensity = this.intensity
 
     var graph = surfaceNets(f, levels[d])
     var edges = graph.cells
@@ -1295,8 +1307,8 @@ function createSurfacePlot (params) {
 
   var surface = new SurfacePlot(
     gl,
-    [0, 0],
-    [[0, 0, 0], [0, 0, 0]],
+    [0, 0], // shape
+    [[0, 0, 0], [0, 0, 0]], // bounds
     shader,
     pickShader,
     coordinateBuffer,
@@ -1307,7 +1319,9 @@ function createSurfacePlot (params) {
     contourBuffer,
     contourVAO,
     dynamicBuffer,
-    dynamicVAO
+    dynamicVAO,
+    [0, 0, 0] // worldOffset
+    [1, 1, 1] // worldScale
   )
 
   var nparams = {
