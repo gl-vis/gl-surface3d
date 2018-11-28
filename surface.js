@@ -94,13 +94,13 @@ function SurfacePlot (
   contourVAO,
   dynamicBuffer,
   dynamicVAO,
-  worldOffset,
-  worldScale) {
+  objectOffset,
+  objectScale) {
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
-  this.worldOffset = worldOffset
-  this.worldScale = worldScale
+  this.objectOffset = objectOffset
+  this.objectScale = objectScale
   this.intensityBounds = []
 
   this._shader = shader
@@ -718,8 +718,8 @@ function handleColor (param) {
 proto.update = function (params) {
   params = params || {}
 
-  this.worldOffset = params.worldOffset
-  this.worldScale = params.worldScale
+  this.objectOffset = params.objectOffset
+  this.objectScale = params.objectScale
 
   this.dirty = true
 
@@ -927,9 +927,9 @@ proto.update = function (params) {
           var r = i + QUAD[k][0]
           var c = j + QUAD[k][1]
 
-          var tx = this._field[0].get(r + 1, c + 1) + this.worldOffset[0]
-          var ty = this._field[1].get(r + 1, c + 1) + this.worldOffset[1]
-          f =      this._field[2].get(r + 1, c + 1) + this.worldOffset[2]
+          var tx = this._field[0].get(r + 1, c + 1) + this.objectOffset[0]
+          var ty = this._field[1].get(r + 1, c + 1) + this.objectOffset[1]
+          f =      this._field[2].get(r + 1, c + 1) + this.objectOffset[2]
           var vf = f
           nx = normals.get(r + 1, c + 1, 0)
           ny = normals.get(r + 1, c + 1, 1)
@@ -969,11 +969,11 @@ proto.update = function (params) {
       lo_intensity = params.intensityBounds[0]
       hi_intensity = params.intensityBounds[1]
 
-      lo_intensity *= params.worldScale[2]
-      hi_intensity *= params.worldScale[2]
+      lo_intensity *= params.objectScale[2]
+      hi_intensity *= params.objectScale[2]
 
-      //lo_intensity -= params.worldOffset[2]
-      //hi_intensity -= params.worldOffset[2]
+      //lo_intensity -= params.objectOffset[2]
+      //hi_intensity -= params.objectOffset[2]
     }
 
     // Scale all vertex intensities
@@ -1320,8 +1320,8 @@ function createSurfacePlot (params) {
     contourVAO,
     dynamicBuffer,
     dynamicVAO,
-    [0, 0, 0] // worldOffset
-    [1, 1, 1] // worldScale
+    [0, 0, 0] // objectOffset
+    [1, 1, 1] // objectScale
   )
 
   var nparams = {
