@@ -1,8 +1,9 @@
-precision mediump float;
+precision highp float;
 
 attribute vec4 uv;
 attribute float f;
 
+uniform vec3 objectOffset;
 uniform mat3 permutation;
 uniform mat4 model, view, projection;
 uniform float height, zOffset;
@@ -16,15 +17,15 @@ varying vec4 vColor;
 
 void main() {
   vec3 dataCoordinate = permutation * vec3(uv.xy, height);
-  vec4 worldPosition = model * vec4(dataCoordinate, 1.0);
+  worldCoordinate = objectOffset + dataCoordinate;
+  vec4 worldPosition = model * vec4(worldCoordinate, 1.0);
 
   vec4 clipPosition = projection * view * worldPosition;
-  clipPosition.z = clipPosition.z + zOffset;
+  clipPosition.z += zOffset;
 
   gl_Position = clipPosition;
   value = f;
   kill = -1.0;
-  worldCoordinate = dataCoordinate;
   planeCoordinate = uv.zw;
 
   vColor = texture2D(colormap, vec2(value, value));

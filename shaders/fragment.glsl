@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 #pragma glslify: beckmann = require(glsl-specular-beckmann)
 #pragma glslify: outOfRange = require(glsl-out-of-range)
@@ -17,8 +17,8 @@ varying vec3 lightDirection, eyeDirection, surfaceNormal;
 varying vec4 vColor;
 
 void main() {
-  if ((kill > 0.0) ||
-      (outOfRange(clipBounds[0], clipBounds[1], worldCoordinate))) discard;
+  //if ((kill > 0.0) ||
+  //    (outOfRange(clipBounds[0], clipBounds[1], worldCoordinate))) discard;
 
   vec3 N = normalize(surfaceNormal);
   vec3 V = normalize(eyeDirection);
