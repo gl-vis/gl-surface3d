@@ -24,7 +24,7 @@ void main() {
   clipPosition.z += zOffset;
 
   gl_Position = clipPosition;
-  value = f;
+  value = f + objectOffset.z;
   kill = -1.0;
   planeCoordinate = uv.zw;
 
