@@ -939,9 +939,13 @@ proto.update = function (params) {
           ny = normals.get(r + 1, c + 1, 1)
           nz = normals.get(r + 1, c + 1, 2)
 
-          var vf = (!params.intensity) ?
-            f + this.objectOffset[2] :
-            params.intensity.get(r, c);
+          if (params.intensity) {
+            vf = params.intensity.get(r, c)
+          }
+
+          var vf = (params.intensity) ?
+            params.intensity.get(r, c) :
+            f + this.objectOffset[2];
 
           tverts[tptr++] = r
           tverts[tptr++] = c
@@ -970,8 +974,8 @@ proto.update = function (params) {
     }
 
     if (params.intensityBounds) {
-      lo_intensity = params.intensityBounds[0]
-      hi_intensity = params.intensityBounds[1]
+      lo_intensity = +params.intensityBounds[0]
+      hi_intensity = +params.intensityBounds[1]
     }
 
     // Scale all vertex intensities
