@@ -19,8 +19,8 @@ vec2 splitFloat(float v) {
 }
 
 void main() {
-  //if ((kill > 0.0) ||
-  //    (outOfRange(clipBounds[0], clipBounds[1], worldCoordinate))) discard;
+  if ((kill > 0.0) ||
+      (outOfRange(clipBounds[0], clipBounds[1], worldCoordinate))) discard;
 
   vec2 ux = splitFloat(planeCoordinate.x / shape.x);
   vec2 uy = splitFloat(planeCoordinate.y / shape.y);
