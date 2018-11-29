@@ -1021,6 +1021,11 @@ proto.update = function (params) {
         return a - b
       })
     }
+    for (i = 0; i < 3; ++i) {
+      for (j = 0; j < levels[i].length; ++j) {
+        levels[i][j] -= this.objectOffset[i]
+      }
+    }
     change_test:
     for (i = 0; i < 3; ++i) {
       if (levels[i].length !== this.contourLevels[i].length) {
@@ -1083,12 +1088,8 @@ proto.update = function (params) {
                   var t = dy ? fy : 1.0 - fy
                   c = Math.min(Math.max(iy + dy, 0), shape[1]) | 0
 
-                  if (axis < 2) {
-                    f = this._field[iu].get(r, c)
-                  } else {
-                    f = this._field[iu].get(r, c)
-                    //f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
-                  }
+                  f = this._field[iu].get(r, c)
+
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
                     break axis_loop
@@ -1160,6 +1161,8 @@ proto.dispose = function () {
 }
 
 proto.highlight = function (selection) {
+  var i
+
   if (!selection) {
     this._dynamicCounts = [0, 0, 0]
     this.dyanamicLevel = [NaN, NaN, NaN]
@@ -1167,7 +1170,7 @@ proto.highlight = function (selection) {
     return
   }
 
-  for (var i = 0; i < 3; ++i) {
+  for (i = 0; i < 3; ++i) {
     if (this.enableHighlight[i]) {
       this.highlightLevel[i] = selection.level[i]
     } else {
@@ -1180,6 +1183,9 @@ proto.highlight = function (selection) {
     levels = selection.dataCoordinate
   } else {
     levels = selection.position
+  }
+  for (i = 0; i < 3; ++i) {
+    levels[i] -= this.objectOffset[i]
   }
   if ((!this.enableDynamic[0] || levels[0] === this.dynamicLevel[0]) &&
     (!this.enableDynamic[1] || levels[1] === this.dynamicLevel[1]) &&
