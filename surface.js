@@ -389,7 +389,8 @@ function drawCore (params, transparent) {
     vao.bind()
 
     // Draw contour levels
-    for (i = 0; i < 3; ++i) {
+    //for (i = 0; i < 3; ++i) {
+    for (i = 2; i === 2; ++i) {
       shader.uniforms.permutation = PERMUTATIONS[i]
       gl.lineWidth(this.contourWidth[i])
 
@@ -404,11 +405,13 @@ function drawCore (params, transparent) {
         if (!this._contourCounts[i][j]) {
           continue
         }
-        shader.uniforms.height = this.contourLevels[i][j] + this.objectOffset[i]
+
+        shader.uniforms.height = this.contourLevels[i][j] + this.objectOffset[2]
+
         vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
       }
     }
-
+/*
     // Draw projections of surface
     for (i = 0; i < 3; ++i) {
       shader.uniforms.model = projectData.projections[i]
@@ -432,8 +435,9 @@ function drawCore (params, transparent) {
         }
       }
     }
+    */
     vao.unbind()
-
+/*
     // Draw dynamic contours
     vao = this._dynamicVAO
     vao.bind()
@@ -466,6 +470,7 @@ function drawCore (params, transparent) {
     }
 
     vao.unbind()
+    */
   }
 }
 
@@ -548,7 +553,7 @@ proto.drawPick = function (params) {
 
     var vao = this._contourVAO
     vao.bind()
-
+/*
     for (j = 0; j < 3; ++j) {
       gl.lineWidth(this.contourWidth[j])
       shader.uniforms.permutation = PERMUTATIONS[j]
@@ -580,7 +585,7 @@ proto.drawPick = function (params) {
         }
       }
     }
-
+*/
     vao.unbind()
   }
 }
@@ -1087,7 +1092,7 @@ proto.update = function (params) {
                   if (axis < 2) {
                     f = this._field[iu].get(r, c) + offset
                   } else {
-                    f = this._field[iu].get(r, c) + offset
+                    f = this._field[iu].get(r, c) // + offset
                     //f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
                     //f = (this.intensity.get(r, c) - this.objectOffset[0]) / (this.objectOffset[1] - this.objectOffset[0])
                   }
@@ -1095,8 +1100,6 @@ proto.update = function (params) {
                     hole = true
                     break axis_loop
                   }
-
-                  //f += this.objectOffset[2]
 
                   var w = s * t
                   parts[axis] += w * f
@@ -1137,8 +1140,12 @@ proto.update = function (params) {
 
 
     var floatBuffer = pool.mallocFloat(contourVerts.length)
-    for (i = 0; i < contourVerts.length; ++i) {
-      floatBuffer[i] = contourVerts[i]
+    for (i = 0; i < contourVerts.length; i += 5) {
+      floatBuffer[i + 0] = contourVerts[i + 0]// + this.objectOffset[0] // this.objectScale[0]
+      floatBuffer[i + 1] = contourVerts[i + 1]// + this.objectOffset[1] // this.objectScale[1]
+      floatBuffer[i + 2] = contourVerts[i + 2]
+      floatBuffer[i + 3] = contourVerts[i + 3]
+      floatBuffer[i + 4] = contourVerts[i + 4]
     }
     this._contourBuffer.update(floatBuffer)
     pool.freeFloat(floatBuffer)
