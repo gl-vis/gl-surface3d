@@ -94,13 +94,11 @@ function SurfacePlot (
   contourVAO,
   dynamicBuffer,
   dynamicVAO,
-  objectOffset,
-  objectScale) {
+  objectOffset) {
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
   this.objectOffset = objectOffset
-  this.objectScale = objectScale
   this.intensityBounds = []
 
   this._shader = shader
@@ -726,7 +724,6 @@ proto.update = function (params) {
   params = params || {}
 
   this.objectOffset = params.objectOffset || this.objectOffset
-  this.objectScale = params.objectScale || this.objectScale
 
   this.dirty = true
 
@@ -975,12 +972,6 @@ proto.update = function (params) {
     if (params.intensityBounds) {
       lo_intensity = params.intensityBounds[0]
       hi_intensity = params.intensityBounds[1]
-
-      lo_intensity *= params.objectScale[2]
-      hi_intensity *= params.objectScale[2]
-
-      //lo_intensity -= params.objectOffset[2]
-      //hi_intensity -= params.objectOffset[2]
     }
 
     // Scale all vertex intensities
@@ -1088,8 +1079,11 @@ proto.update = function (params) {
                   var t = dy ? fy : 1.0 - fy
                   c = Math.min(Math.max(iy + dy, 0), shape[1]) | 0
 
-                  f = this._field[iu].get(r, c)
-
+                  if (axis < 2) {
+                    f = this._field[iu].get(r, c)
+                  } else {
+                    f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
+                  }
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
                     break axis_loop
@@ -1343,7 +1337,6 @@ function createSurfacePlot (params) {
     dynamicBuffer,
     dynamicVAO,
     [0, 0, 0] // objectOffset
-    [1, 1, 1] // objectScale
   )
 
   var nparams = {
