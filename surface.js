@@ -389,8 +389,7 @@ function drawCore (params, transparent) {
     vao.bind()
 
     // Draw contour levels
-    //for (i = 0; i < 3; ++i) {
-    for (i = 2; i === 2; ++i) {
+    for (i = 0; i < 3; ++i) {
       shader.uniforms.permutation = PERMUTATIONS[i]
       gl.lineWidth(this.contourWidth[i])
 
@@ -726,9 +725,6 @@ proto.update = function (params) {
   this.objectOffset = params.objectOffset || this.objectOffset
   this.objectScale = params.objectScale || this.objectScale
 
-  console.log("this.objectOffset=", this.objectOffset);
-  console.log("this.objectScale=", this.objectScale);
-
   this.dirty = true
 
   if ('contourWidth' in params) {
@@ -1046,8 +1042,6 @@ proto.update = function (params) {
     var contourVerts = []
 
     for (var dim = 0; dim < 3; ++dim) {
-      //var otherDim = (dim + 2) % 3
-
       levels = this.contourLevels[dim]
       var levelOffsets = []
       var levelCounts = []
@@ -1080,7 +1074,7 @@ proto.update = function (params) {
 
               var offset = this.objectOffset[axis]
 
-              parts[axis] = 0.0 //+ offset
+              parts[axis] = 0.0
               var iu = (dim + axis + 1) % 3
               for (dx = 0; dx < 2; ++dx) {
                 var s = dx ? fx : 1.0 - fx
@@ -1092,9 +1086,8 @@ proto.update = function (params) {
                   if (axis < 2) {
                     f = this._field[iu].get(r, c) + offset
                   } else {
-                    f = this._field[iu].get(r, c) // + offset
+                    f = this._field[iu].get(r, c)
                     //f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
-                    //f = (this.intensity.get(r, c) - this.objectOffset[0]) / (this.objectOffset[1] - this.objectOffset[0])
                   }
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
@@ -1109,11 +1102,11 @@ proto.update = function (params) {
 
             if (!hole) {
               contourVerts.push(
-                parts[0], // + this.objectOffset[0],
-                parts[1], // + this.objectOffset[1],
+                parts[0],
+                parts[1],
                 p[0],
                 p[1],
-                parts[2] //+ this.objectOffset[2]
+                parts[2]
               )
               vertexCount += 1
             } else {
