@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 #pragma glslify: beckmann = require(glsl-specular-beckmann)
 #pragma glslify: outOfRange = require(glsl-out-of-range)
