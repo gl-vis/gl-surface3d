@@ -3,7 +3,6 @@ precision mediump float;
 #pragma glslify: beckmann = require(glsl-specular-beckmann)
 #pragma glslify: outOfRange = require(glsl-out-of-range)
 
-uniform vec3 objectOffset;
 uniform vec3 lowerBound, upperBound;
 uniform float contourTint;
 uniform vec4 contourColor;
