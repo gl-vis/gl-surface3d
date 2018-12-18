@@ -93,11 +93,13 @@ function SurfacePlot (
   contourBuffer,
   contourVAO,
   dynamicBuffer,
-  dynamicVAO) {
+  dynamicVAO,
+  objectOffset) {
   this.gl = gl
   this.shape = shape
   this.bounds = bounds
-  this.intensityBounds = [];
+  this.objectOffset = objectOffset
+  this.intensityBounds = []
 
   this._shader = shader
   this._pickShader = pickShader
@@ -267,6 +269,7 @@ var UNIFORMS = {
   contourColor: [0, 0, 0, 1],
   permutation: [1, 0, 0, 0, 1, 0, 0, 0, 1],
   zOffset: -1e-4,
+  objectOffset: [0, 0, 0],
   kambient: 1,
   kdiffuse: 1,
   kspecular: 1,
@@ -295,6 +298,7 @@ function drawCore (params, transparent) {
   uniforms.projection = params.projection || IDENTITY
   uniforms.lowerBound = [this.bounds[0][0], this.bounds[0][1], this.colorBounds[0] || this.bounds[0][2]]
   uniforms.upperBound = [this.bounds[1][0], this.bounds[1][1], this.colorBounds[1] || this.bounds[1][2]]
+  uniforms.objectOffset = this.objectOffset
   uniforms.contourColor = this.contourColor[0]
 
   uniforms.inverseModel = invert(uniforms.inverseModel, uniforms.model)
@@ -400,7 +404,9 @@ function drawCore (params, transparent) {
         if (!this._contourCounts[i][j]) {
           continue
         }
+
         shader.uniforms.height = this.contourLevels[i][j]
+
         vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
       }
     }
@@ -428,6 +434,7 @@ function drawCore (params, transparent) {
         }
       }
     }
+
     vao.unbind()
 
     // Draw dynamic contours
@@ -485,6 +492,7 @@ var PICK_UNIFORMS = {
   lowerBound: [0, 0, 0],
   upperBound: [0, 0, 0],
   zOffset: 0.0,
+  objectOffset: [0, 0, 0],
   permutation: [1, 0, 0, 0, 1, 0, 0, 0, 1],
   lightPosition: [0, 0, 0],
   eyePosition: [0, 0, 0]
@@ -503,6 +511,7 @@ proto.drawPick = function (params) {
   uniforms.pickId = this.pickId / 255.0
   uniforms.lowerBound = this.bounds[0]
   uniforms.upperBound = this.bounds[1]
+  uniforms.objectOffset = this.objectOffset
   uniforms.permutation = DEFAULT_PERM
 
   for (var i = 0; i < 2; ++i) {
@@ -714,6 +723,8 @@ function handleColor (param) {
 proto.update = function (params) {
   params = params || {}
 
+  this.objectOffset = params.objectOffset || this.objectOffset
+
   this.dirty = true
 
   if ('contourWidth' in params) {
@@ -922,8 +933,8 @@ proto.update = function (params) {
 
           var tx = this._field[0].get(r + 1, c + 1)
           var ty = this._field[1].get(r + 1, c + 1)
-          f = this._field[2].get(r + 1, c + 1)
-          var vf = f
+          f =      this._field[2].get(r + 1, c + 1)
+
           nx = normals.get(r + 1, c + 1, 0)
           ny = normals.get(r + 1, c + 1, 1)
           nz = normals.get(r + 1, c + 1, 2)
@@ -931,6 +942,10 @@ proto.update = function (params) {
           if (params.intensity) {
             vf = params.intensity.get(r, c)
           }
+
+          var vf = (params.intensity) ?
+            params.intensity.get(r, c) :
+            f + this.objectOffset[2];
 
           tverts[tptr++] = r
           tverts[tptr++] = c
@@ -943,14 +958,14 @@ proto.update = function (params) {
           tverts[tptr++] = ny
           tverts[tptr++] = nz
 
-          lo[0] = Math.min(lo[0], tx)
-          lo[1] = Math.min(lo[1], ty)
-          lo[2] = Math.min(lo[2], f)
+          lo[0] = Math.min(lo[0], tx + this.objectOffset[0])
+          lo[1] = Math.min(lo[1], ty + this.objectOffset[1])
+          lo[2] = Math.min(lo[2], f  + this.objectOffset[2])
           lo_intensity = Math.min(lo_intensity, vf)
 
-          hi[0] = Math.max(hi[0], tx)
-          hi[1] = Math.max(hi[1], ty)
-          hi[2] = Math.max(hi[2], f)
+          hi[0] = Math.max(hi[0], tx + this.objectOffset[0])
+          hi[1] = Math.max(hi[1], ty + this.objectOffset[1])
+          hi[2] = Math.max(hi[2], f  + this.objectOffset[2])
           hi_intensity = Math.max(hi_intensity, vf)
 
           vertexCount += 1
@@ -1001,6 +1016,11 @@ proto.update = function (params) {
         return a - b
       })
     }
+    for (i = 0; i < 3; ++i) {
+      for (j = 0; j < levels[i].length; ++j) {
+        levels[i][j] -= this.objectOffset[i]
+      }
+    }
     change_test:
     for (i = 0; i < 3; ++i) {
       if (levels[i].length !== this.contourLevels[i].length) {
@@ -1033,6 +1053,7 @@ proto.update = function (params) {
 
       for (i = 0; i < levels.length; ++i) {
         var graph = surfaceNets(this._field[dim], levels[i])
+
         levelOffsets.push((contourVerts.length / 5) | 0)
         vertexCount = 0
 
@@ -1051,10 +1072,10 @@ proto.update = function (params) {
             var fy = y - iy
 
             var hole = false
-            dd_loop:
-            for (var dd = 0; dd < 3; ++dd) {
-              parts[dd] = 0.0
-              var iu = (dim + dd + 1) % 3
+            axis_loop:
+            for (var axis = 0; axis < 3; ++axis) {
+              parts[axis] = 0.0
+              var iu = (dim + axis + 1) % 3
               for (dx = 0; dx < 2; ++dx) {
                 var s = dx ? fx : 1.0 - fx
                 r = Math.min(Math.max(ix + dx, 0), shape[0]) | 0
@@ -1062,24 +1083,30 @@ proto.update = function (params) {
                   var t = dy ? fy : 1.0 - fy
                   c = Math.min(Math.max(iy + dy, 0), shape[1]) | 0
 
-                  if (dd < 2) {
+                  if (axis < 2) {
                     f = this._field[iu].get(r, c)
                   } else {
                     f = (this.intensity.get(r, c) - this.intensityBounds[0]) / (this.intensityBounds[1] - this.intensityBounds[0])
                   }
                   if (!isFinite(f) || isNaN(f)) {
                     hole = true
-                    break dd_loop
+                    break axis_loop
                   }
 
                   var w = s * t
-                  parts[dd] += w * f
+                  parts[axis] += w * f
                 }
               }
             }
 
             if (!hole) {
-              contourVerts.push(parts[0], parts[1], p[0], p[1], parts[2])
+              contourVerts.push(
+                parts[0],
+                parts[1],
+                p[0],
+                p[1],
+                parts[2]
+              )
               vertexCount += 1
             } else {
               if (k > 0) {
@@ -1099,6 +1126,7 @@ proto.update = function (params) {
       // Store results
       this._contourOffsets[dim] = levelOffsets
       this._contourCounts[dim] = levelCounts
+
     }
 
     var floatBuffer = pool.mallocFloat(contourVerts.length)
@@ -1131,6 +1159,8 @@ proto.dispose = function () {
 }
 
 proto.highlight = function (selection) {
+  var i
+
   if (!selection) {
     this._dynamicCounts = [0, 0, 0]
     this.dyanamicLevel = [NaN, NaN, NaN]
@@ -1138,7 +1168,7 @@ proto.highlight = function (selection) {
     return
   }
 
-  for (var i = 0; i < 3; ++i) {
+  for (i = 0; i < 3; ++i) {
     if (this.enableHighlight[i]) {
       this.highlightLevel[i] = selection.level[i]
     } else {
@@ -1151,6 +1181,9 @@ proto.highlight = function (selection) {
     levels = selection.dataCoordinate
   } else {
     levels = selection.position
+  }
+  for (i = 0; i < 3; ++i) {
+    levels[i] -= this.objectOffset[i]
   }
   if ((!this.enableDynamic[0] || levels[0] === this.dynamicLevel[0]) &&
     (!this.enableDynamic[1] || levels[1] === this.dynamicLevel[1]) &&
@@ -1177,7 +1210,6 @@ proto.highlight = function (selection) {
     var f = this._field[d]
     var g = this._field[u]
     var h = this._field[v]
-    var intensity = this.intensity
 
     var graph = surfaceNets(f, levels[d])
     var edges = graph.cells
@@ -1295,8 +1327,8 @@ function createSurfacePlot (params) {
 
   var surface = new SurfacePlot(
     gl,
-    [0, 0],
-    [[0, 0, 0], [0, 0, 0]],
+    [0, 0], // shape
+    [[0, 0, 0], [0, 0, 0]], // bounds
     shader,
     pickShader,
     coordinateBuffer,
@@ -1307,7 +1339,8 @@ function createSurfacePlot (params) {
     contourBuffer,
     contourVAO,
     dynamicBuffer,
-    dynamicVAO
+    dynamicVAO,
+    [0, 0, 0] // objectOffset
   )
 
   var nparams = {

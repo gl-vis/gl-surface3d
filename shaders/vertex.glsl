@@ -4,6 +4,7 @@ attribute vec4 uv;
 attribute vec3 f;
 attribute vec3 normal;
 
+uniform vec3 objectOffset;
 uniform mat4 model, view, projection, inverseModel;
 uniform vec3 lightPosition, eyePosition;
 uniform sampler2D colormap;
@@ -15,7 +16,8 @@ varying vec3 lightDirection, eyeDirection, surfaceNormal;
 varying vec4 vColor;
 
 void main() {
-  worldCoordinate = vec3(uv.zw, f.x);
+  vec3 localCoordinate = vec3(uv.zw, f.x);
+  worldCoordinate = objectOffset + localCoordinate;
   vec4 worldPosition = model * vec4(worldCoordinate, 1.0);
   vec4 clipPosition = projection * view * worldPosition;
   gl_Position = clipPosition;
