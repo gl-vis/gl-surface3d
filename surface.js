@@ -391,7 +391,7 @@ function drawCore (params, transparent) {
     // Draw contour levels
     for (i = 0; i < 3; ++i) {
       shader.uniforms.permutation = PERMUTATIONS[i]
-      gl.lineWidth(this.contourWidth[i])
+      gl.lineWidth(this.contourWidth[i] * this.pixelRatio)
 
       for (j = 0; j < this.contourLevels[i].length; ++j) {
         if (j === this.highlightLevel[i]) {
@@ -420,7 +420,7 @@ function drawCore (params, transparent) {
           continue
         }
         shader.uniforms.permutation = PERMUTATIONS[j]
-        gl.lineWidth(this.contourWidth[j])
+        gl.lineWidth(this.contourWidth[j] * this.pixelRatio)
         for (var k = 0; k < this.contourLevels[j].length; ++k) {
           if (k === this.highlightLevel[j]) {
             shader.uniforms.contourColor = this.highlightColor[j]
@@ -450,7 +450,7 @@ function drawCore (params, transparent) {
       shader.uniforms.model = uniforms.model
       shader.uniforms.clipBounds = uniforms.clipBounds
       shader.uniforms.permutation = PERMUTATIONS[i]
-      gl.lineWidth(this.dynamicWidth[i])
+      gl.lineWidth(this.dynamicWidth[i] * this.pixelRatio)
 
       shader.uniforms.contourColor = this.dynamicColor[i]
       shader.uniforms.contourTint = this.dynamicTint[i]
@@ -555,7 +555,7 @@ proto.drawPick = function (params) {
     vao.bind()
 
     for (j = 0; j < 3; ++j) {
-      gl.lineWidth(this.contourWidth[j])
+      gl.lineWidth(this.contourWidth[j] * this.pixelRatio)
       shader.uniforms.permutation = PERMUTATIONS[j]
       for (i = 0; i < this.contourLevels[j].length; ++i) {
         if (this._contourCounts[j][i]) {
@@ -1272,6 +1272,7 @@ proto.highlight = function (selection) {
 
 function createSurfacePlot (params) {
   var gl = params.gl
+
   var shader = createShader(gl)
   var pickShader = createPickShader(gl)
   var contourShader = createContourShader(gl)
