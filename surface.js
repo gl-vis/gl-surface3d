@@ -161,6 +161,8 @@ function SurfacePlot (
 
   this.snapToData = false
 
+  this.pixelRatio = 1
+
   this.opacity = 1.0
 
   this.lightPosition = [10, 10000, 0]
