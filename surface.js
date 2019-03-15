@@ -178,6 +178,10 @@ function SurfacePlot (
 
 var proto = SurfacePlot.prototype
 
+proto.applyPixelRatio = function (a) {
+  return Math.pow(a, (0.5 * this.pixelRatio))
+}
+
 proto.isTransparent = function () {
   return this.opacity < 1
 }
@@ -393,7 +397,7 @@ function drawCore (params, transparent) {
     // Draw contour levels
     for (i = 0; i < 3; ++i) {
       shader.uniforms.permutation = PERMUTATIONS[i]
-      gl.lineWidth(this.contourWidth[i] * this.pixelRatio)
+      gl.lineWidth(this.applyPixelRatio(this.contourWidth[i]))
 
       for (j = 0; j < this.contourLevels[i].length; ++j) {
         if (j === this.highlightLevel[i]) {
@@ -422,7 +426,7 @@ function drawCore (params, transparent) {
           continue
         }
         shader.uniforms.permutation = PERMUTATIONS[j]
-        gl.lineWidth(this.contourWidth[j] * this.pixelRatio)
+        gl.lineWidth(this.applyPixelRatio(this.contourWidth[j]))
         for (var k = 0; k < this.contourLevels[j].length; ++k) {
           if (k === this.highlightLevel[j]) {
             shader.uniforms.contourColor = this.highlightColor[j]
@@ -452,7 +456,7 @@ function drawCore (params, transparent) {
       shader.uniforms.model = uniforms.model
       shader.uniforms.clipBounds = uniforms.clipBounds
       shader.uniforms.permutation = PERMUTATIONS[i]
-      gl.lineWidth(this.dynamicWidth[i] * this.pixelRatio)
+      gl.lineWidth(this.applyPixelRatio(this.dynamicWidth[i]))
 
       shader.uniforms.contourColor = this.dynamicColor[i]
       shader.uniforms.contourTint = this.dynamicTint[i]
@@ -557,7 +561,7 @@ proto.drawPick = function (params) {
     vao.bind()
 
     for (j = 0; j < 3; ++j) {
-      gl.lineWidth(this.contourWidth[j] * this.pixelRatio)
+      gl.lineWidth(this.applyPixelRatio(this.contourWidth[j]))
       shader.uniforms.permutation = PERMUTATIONS[j]
       for (i = 0; i < this.contourLevels[j].length; ++i) {
         if (this._contourCounts[j][i]) {
@@ -578,7 +582,7 @@ proto.drawPick = function (params) {
         }
 
         shader.uniforms.permutation = PERMUTATIONS[j]
-        gl.lineWidth(this.contourWidth[j])
+        gl.lineWidth(this.applyPixelRatio(this.contourWidth[j]))
         for (var k = 0; k < this.contourLevels[j].length; ++k) {
           if (this._contourCounts[j][k]) {
             shader.uniforms.height = this.contourLevels[j][k]
