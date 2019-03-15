@@ -578,7 +578,7 @@ proto.drawPick = function (params) {
         }
 
         shader.uniforms.permutation = PERMUTATIONS[j]
-        gl.lineWidth(this.contourWidth[j])
+        gl.lineWidth(this.contourWidth[j] * this.pixelRatio)
         for (var k = 0; k < this.contourLevels[j].length; ++k) {
           if (this._contourCounts[j][k]) {
             shader.uniforms.height = this.contourLevels[j][k]
