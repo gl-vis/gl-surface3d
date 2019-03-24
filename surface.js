@@ -408,7 +408,6 @@ function drawCore (params, transparent) {
         }
 
         shader.uniforms.height = this.contourLevels[i][j]
-
         vao.draw(gl.LINES, this._contourCounts[i][j], this._contourOffsets[i][j])
       }
     }
@@ -431,6 +430,10 @@ function drawCore (params, transparent) {
             shader.uniforms.contourColor = this.contourColor[j]
             shader.uniforms.contourTint = this.contourTint[j]
           }
+          if (!this._contourCounts[j][k]) {
+            continue
+          }
+
           shader.uniforms.height = this.contourLevels[j][k]
           vao.draw(gl.LINES, this._contourCounts[j][k], this._contourOffsets[j][k])
         }
@@ -1014,7 +1017,7 @@ proto.update = function (params) {
     }
     for (i = 0; i < 3; ++i) {
       levels[i] = levels[i].slice()
-      levels.sort(function (a, b) {
+      levels[i].sort(function (a, b) {
         return a - b
       })
     }
@@ -1047,14 +1050,15 @@ proto.update = function (params) {
     var contourVerts = []
 
     for (var dim = 0; dim < 3; ++dim) {
-      levels = this.contourLevels[dim]
+      var contourLevel = this.contourLevels[dim]
+
       var levelOffsets = []
       var levelCounts = []
 
       var parts = [0, 0, 0]
 
-      for (i = 0; i < levels.length; ++i) {
-        var graph = surfaceNets(this._field[dim], levels[i])
+      for (i = 0; i < contourLevel.length; ++i) {
+        var graph = surfaceNets(this._field[dim], contourLevel[i])
 
         levelOffsets.push((contourVerts.length / 5) | 0)
         vertexCount = 0
