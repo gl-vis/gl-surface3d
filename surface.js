@@ -67,13 +67,14 @@ function SurfacePickResult (position, index, uv, level, dataCoordinate) {
 
 var N_COLORS = 256
 
-function genColormap (name) {
+function genColormap (name, opacityscale) {
   var x = pack([colormap({
     colormap: name,
     nshades: N_COLORS,
     format: 'rgba'
-  }).map(function (c) {
-    return [c[0], c[1], c[2], 255 * c[3]]
+  }).map(function (c, i) {
+    var a = opacityscale ? getOpacityFromScale(i / 255.0, opacityscale) : 1
+    return [c[0], c[1], c[2], 255 * a]
   })])
   ops.divseq(x, 255.0)
   return x
@@ -164,6 +165,7 @@ function SurfacePlot (
   this.pixelRatio = 1
 
   this.opacity = 1.0
+  this.opacityscale  = false
 
   this.lightPosition = [10, 10000, 0]
   this.ambientLight = 0.8
@@ -179,15 +181,18 @@ function SurfacePlot (
 var proto = SurfacePlot.prototype
 
 proto.isTransparent = function () {
-  return this.opacity < 1
+  return this.opacity < 1 || this.opacityscale
 }
 
 proto.isOpaque = function () {
+  if (this.opacityscale) {
+    return false
+  }
   if (this.opacity >= 1) {
     return true
   }
   for (var i = 0; i < 3; ++i) {
-    if (this._contourCounts[i].length > 0 || this._dynamicCounts[i] > 0) {
+    if (this._contourCounts[i].length > 0) {
       return true
     }
   }
@@ -198,6 +203,22 @@ proto.pickSlots = 1
 
 proto.setPickBase = function (id) {
   this.pickId = id
+}
+
+function getOpacityFromScale(ratio, opacityscale) { // copied form gl-mesh3d
+  if(!opacityscale) return 1
+  if(!opacityscale.length) return 1
+
+  for(var i = 0; i < opacityscale.length; ++i) {
+    if(opacityscale.length < 2) return 1
+    if(opacityscale[i][0] === ratio) return opacityscale[i][1]
+    if(opacityscale[i][0] > ratio && i > 0) {
+      var d = (opacityscale[i][0] - ratio) / (opacityscale[i][0] - opacityscale[i - 1][0])
+      return opacityscale[i][1] * (1 - d) + d * opacityscale[i - 1][1]
+    }
+  }
+
+  return 1
 }
 
 var ZERO_VEC = [0, 0, 0]
@@ -349,7 +370,7 @@ function drawCore (params, transparent) {
 
   var projectData = computeProjectionData(uniforms, this)
 
-  if (projectData.showSurface && (transparent === (this.opacity < 1))) {
+  if (projectData.showSurface)  {
     // Set up uniforms
     this._shader.bind()
     this._shader.uniforms = uniforms
@@ -374,7 +395,7 @@ function drawCore (params, transparent) {
     this._vao.unbind()
   }
 
-  if (projectData.showContour && !transparent) {
+  if (projectData.showContour) {
     var shader = this._contourShader
 
     // Don't apply lighting to contours
@@ -767,6 +788,9 @@ proto.update = function (params) {
   if ('opacity' in params) {
     this.opacity = params.opacity
   }
+  if('opacityscale' in params) {
+    this.opacityscale = params.opacityscale
+  }
   if ('colorBounds' in params) {
     this.colorBounds = params.colorBounds
   }
@@ -1144,7 +1168,7 @@ proto.update = function (params) {
   }
 
   if (params.colormap) {
-    this._colorMap.setPixels(genColormap(params.colormap))
+    this._colorMap.setPixels(genColormap(params.colormap, this.opacityscale))
   }
 }
 
