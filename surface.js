@@ -188,6 +188,9 @@ proto.isOpaque = function () {
   if (this.opacityscale) {
     return false
   }
+  if (this.opacity < 1) {
+    return false
+  }
   if (this.opacity >= 1) {
     return true
   }
