@@ -167,19 +167,20 @@ function SurfacePlot (
 var proto = SurfacePlot.prototype
 
 proto.genColormap = function (name, opacityscale) {
-  proto.hasAlphaScale = false
+  var hasAlpha = false
+
   var x = pack([colormap({
     colormap: name,
     nshades: N_COLORS,
     format: 'rgba'
   }).map(function (c, i) {
     var a = opacityscale ? getOpacityFromScale(i / 255.0, opacityscale) : c[3]
-    if(a < 1) {
-      proto.hasAlphaScale = true
-    }
+    if(a < 1) hasAlpha = true
     return [c[0], c[1], c[2], 255 * a]
   })])
   ops.divseq(x, 255.0)
+
+  this.hasAlphaScale = hasAlpha
   return x
 }
 
@@ -188,21 +189,7 @@ proto.isTransparent = function () {
 }
 
 proto.isOpaque = function () {
-  if (this.hasAlphaScale) {
-    return false
-  }
-  if (this.opacity < 1) {
-    return false
-  }
-  if (this.opacity >= 1) {
-    return true
-  }
-  for (var i = 0; i < 3; ++i) {
-    if (this._contourCounts[i].length > 0) {
-      return true
-    }
-  }
-  return false
+  return !this.isTransparent()
 }
 
 proto.pickSlots = 1
