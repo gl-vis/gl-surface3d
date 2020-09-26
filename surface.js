@@ -67,19 +67,6 @@ function SurfacePickResult (position, index, uv, level, dataCoordinate) {
 
 var N_COLORS = 256
 
-function genColormap (name, opacityscale) {
-  var x = pack([colormap({
-    colormap: name,
-    nshades: N_COLORS,
-    format: 'rgba'
-  }).map(function (c, i) {
-    var a = opacityscale ? getOpacityFromScale(i / 255.0, opacityscale) : 1
-    return [c[0], c[1], c[2], 255 * a]
-  })])
-  ops.divseq(x, 255.0)
-  return x
-}
-
 function SurfacePlot (
   gl,
   shape,
@@ -165,7 +152,6 @@ function SurfacePlot (
   this.pixelRatio = 1
 
   this.opacity = 1.0
-  this.opacityscale  = false
 
   this.lightPosition = [10, 10000, 0]
   this.ambientLight = 0.8
@@ -180,26 +166,30 @@ function SurfacePlot (
 
 var proto = SurfacePlot.prototype
 
+proto.genColormap = function (name, opacityscale) {
+  var hasAlpha = false
+
+  var x = pack([colormap({
+    colormap: name,
+    nshades: N_COLORS,
+    format: 'rgba'
+  }).map(function (c, i) {
+    var a = opacityscale ? getOpacityFromScale(i / 255.0, opacityscale) : c[3]
+    if(a < 1) hasAlpha = true
+    return [c[0], c[1], c[2], 255 * a]
+  })])
+  ops.divseq(x, 255.0)
+
+  this.hasAlphaScale = hasAlpha
+  return x
+}
+
 proto.isTransparent = function () {
-  return this.opacity < 1 || this.opacityscale
+  return this.opacity < 1 || this.hasAlphaScale
 }
 
 proto.isOpaque = function () {
-  if (this.opacityscale) {
-    return false
-  }
-  if (this.opacity < 1) {
-    return false
-  }
-  if (this.opacity >= 1) {
-    return true
-  }
-  for (var i = 0; i < 3; ++i) {
-    if (this._contourCounts[i].length > 0) {
-      return true
-    }
-  }
-  return false
+  return !this.isTransparent()
 }
 
 proto.pickSlots = 1
@@ -800,6 +790,9 @@ proto.update = function (params) {
   if ('vertexColor' in params) {
     this.vertexColor = params.vertexColor ? 1 : 0;
   }
+  if ('colormap' in params) {
+    this._colorMap.setPixels(this.genColormap(params.colormap, this.opacityscale))
+  }
 
   var field = params.field || (params.coords && params.coords[2]) || null
   var levelsChanged = false
@@ -1168,10 +1161,6 @@ proto.update = function (params) {
     }
     this._contourBuffer.update(floatBuffer)
     pool.freeFloat(floatBuffer)
-  }
-
-  if (params.colormap) {
-    this._colorMap.setPixels(genColormap(params.colormap, this.opacityscale))
   }
 }
 
