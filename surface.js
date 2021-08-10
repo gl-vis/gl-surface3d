@@ -15,7 +15,7 @@ var surfaceNets = require('surface-nets')
 var multiply = require('gl-mat4/multiply')
 var invert = require('gl-mat4/invert')
 var bsearch = require('binary-search-bounds')
-var gradient = require('ndarray-gradient')
+var gradient = require('./gradient')
 var shaders = require('./lib/shaders')
 
 var createShader = shaders.createShader
