@@ -19,7 +19,7 @@ void main() {
   vec3 localCoordinate = vec3(uv.zw, f.x);
   worldCoordinate = objectOffset + localCoordinate;
   vec4 worldPosition = model * vec4(worldCoordinate, 1.0);
-  vec4 clipPosition = projection * view * worldPosition;
+  vec4 clipPosition = projection * (view * worldPosition);
   gl_Position = clipPosition;
   kill = f.y;
   value = f.z;

@@ -20,7 +20,7 @@ void main() {
   worldCoordinate = objectOffset + dataCoordinate;
   vec4 worldPosition = model * vec4(worldCoordinate, 1.0);
 
-  vec4 clipPosition = projection * view * worldPosition;
+  vec4 clipPosition = projection * (view * worldPosition);
   clipPosition.z += zOffset;
 
   gl_Position = clipPosition;
