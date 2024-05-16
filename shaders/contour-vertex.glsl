@@ -18,7 +18,8 @@ varying vec4 vColor;
 void main() {
   vec3 dataCoordinate = permutation * vec3(uv.xy, height);
   worldCoordinate = objectOffset + dataCoordinate;
-  vec4 worldPosition = model * vec4(worldCoordinate, 1.0);
+  mat4 objectOffsetTranslation = mat4(1.0) + mat4(vec4(0), vec4(0), vec4(0), vec4(objectOffset, 0));
+  vec4 worldPosition = (model * objectOffsetTranslation) * vec4(dataCoordinate, 1.0);
 
   vec4 clipPosition = projection * (view * worldPosition);
   clipPosition.z += zOffset;
